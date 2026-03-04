@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aleandro Ferreira Advocacia — Direito Previdenciário</title>
+  <meta name="description" content="Especialista em Direito Previdenciário com mais de 25 anos de experiência. Aposentadoria, auxílio-doença, pensão por morte. Atendemos em todo o Brasil." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=Lato:wght@300;400;700&display=swap" rel="stylesheet" />
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--gold:#C9A84C;--gold-light:#E8C96A;--gold-dark:#8B6914;--cream:#FAFAF7;--cream-dark:#F0EDE4;--dark:#1A1509;--dark-mid:#2D2410;--text:#3D3520;--text-light:#6B5D3A}
+    html{scroll-behavior:smooth}
+    body{font-family:'Lato',sans-serif;background:var(--cream);color:var(--text)}
+    .pf{font-family:'Playfair Display',serif}
+    .cg{font-family:'Cormorant Garamond',serif}
+    nav{position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(26,21,9,0.93);backdrop-filter:blur(12px);border-bottom:1px solid rgba(201,168,76,0.25)}
+    .nav-in{max-width:1200px;margin:0 auto;padding:0 2.5rem;display:flex;justify-content:space-between;align-items:center;height:76px}
+    .nav-brand{display:flex;align-items:center;gap:1rem}
+    .nav-logo{height:50px;width:auto;filter:drop-shadow(0 2px 12px rgba(201,168,76,0.5));background:transparent}
+    .nav-name{font-family:'Playfair Display',serif;color:var(--gold);font-size:1rem;font-weight:700;letter-spacing:3px;line-height:1}
+    .nav-sub{font-family:'Lato',sans-serif;color:rgba(201,168,76,0.55);font-size:0.58rem;letter-spacing:5px;text-transform:uppercase;margin-top:3px}
+    .btn-wpp{background:#25D366;color:white;border:none;padding:0.8rem 1.6rem;font-family:'Lato',sans-serif;font-weight:700;font-size:0.74rem;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all 0.3s;border-radius:2px;display:inline-flex;align-items:center;gap:0.55rem;text-decoration:none}
+    .btn-wpp:hover{background:#128C7E;box-shadow:0 4px 20px rgba(37,211,102,0.4);transform:translateY(-1px)}
+    .btn-outline{background:transparent;color:rgba(255,255,255,0.85);border:1px solid rgba(201,168,76,0.6);padding:0.8rem 1.8rem;font-family:'Lato',sans-serif;font-weight:700;font-size:0.74rem;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all 0.3s;border-radius:2px}
+    .btn-outline:hover{background:rgba(201,168,76,0.12);border-color:var(--gold)}
+    .btn-dark{background:#1A1509;color:white;border:none;padding:0.9rem 2rem;font-family:'Lato',sans-serif;font-weight:700;font-size:0.78rem;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all 0.3s;border-radius:2px;display:inline-flex;align-items:center;gap:0.6rem}
+    .btn-dark:hover{background:#2D2410;transform:translateY(-1px)}
+    .btn-outline-dark{background:transparent;color:#1A1509;border:1.5px solid #1A1509;padding:0.9rem 2rem;font-family:'Lato',sans-serif;font-weight:700;font-size:0.78rem;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all 0.3s;border-radius:2px;text-decoration:none;display:inline-block}
+    .hero{position:relative;min-height:100vh;display:flex;align-items:flex-end;padding-bottom:5rem;overflow:hidden}
+    .hero-bg{position:absolute;inset:0;z-index:0;background-size:cover;background-position:center top;transform:scale(1.03)}
+    .hero-ov{position:absolute;inset:0;z-index:1;background:linear-gradient(to right,rgba(26,21,9,0.92) 0%,rgba(26,21,9,0.65) 45%,rgba(26,21,9,0.1) 75%,rgba(26,21,9,0.4) 100%),linear-gradient(to top,rgba(26,21,9,0.9) 0%,rgba(26,21,9,0.3) 40%,transparent 70%),linear-gradient(to bottom,rgba(26,21,9,0.6) 0%,transparent 20%)}
+    .hero-in{position:relative;z-index:2;max-width:1200px;margin:0 auto;padding:76px 2.5rem 0;width:100%}
+    .hero-logo{width:200px;height:auto;display:block;margin-bottom:2rem;filter:drop-shadow(0 4px 24px rgba(201,168,76,0.6)) drop-shadow(0 0 40px rgba(201,168,76,0.25));background:transparent;animation:floatLogo 4s ease-in-out infinite}
+    @keyframes floatLogo{0%,100%{filter:drop-shadow(0 4px 24px rgba(201,168,76,0.6)) drop-shadow(0 0 40px rgba(201,168,76,0.25))}50%{filter:drop-shadow(0 6px 32px rgba(201,168,76,0.8)) drop-shadow(0 0 60px rgba(201,168,76,0.4))}}
+    .hero-label{font-family:'Lato',sans-serif;font-size:0.68rem;letter-spacing:5px;text-transform:uppercase;color:rgba(201,168,76,0.8);margin-bottom:1.2rem}
+    .hero h1{font-family:'Playfair Display',serif;font-size:3.8rem;font-weight:800;color:white;line-height:1.12;margin-bottom:1.5rem;max-width:640px}
+    .hero h1 span{color:var(--gold)}
+    .hero-div{width:70px;height:2px;background:linear-gradient(90deg,var(--gold),transparent);margin-bottom:1.5rem}
+    .hero-sub{font-family:'Cormorant Garamond',serif;font-size:1.3rem;color:rgba(255,255,255,0.78);line-height:1.8;margin-bottom:1rem;max-width:520px}
+    .hero-hl{font-family:'Lato',sans-serif;font-size:0.78rem;color:var(--gold);letter-spacing:1px;margin-bottom:2.5rem}
+    .hero-btns{display:flex;gap:1rem;flex-wrap:wrap}
+    .hero-badge{position:absolute;bottom:5rem;right:3rem;z-index:3;background:linear-gradient(135deg,#C9A84C,#E8C96A);border-radius:4px;padding:1.1rem 1.6rem;box-shadow:0 8px 32px rgba(201,168,76,0.5)}
+    .badge-num{font-family:'Playfair Display',serif;font-size:2rem;font-weight:800;color:#1A1509;line-height:1}
+    .badge-lbl{font-family:'Lato',sans-serif;font-size:0.63rem;color:#2D2410;letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+    .stats{background:#2D2410;border-bottom:1px solid rgba(201,168,76,0.2)}
+    .stats-in{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
+    .stat{text-align:center;padding:2.2rem 1rem;border-right:1px solid rgba(201,168,76,0.15)}
+    .stat:last-child{border-right:none}
+    .stat-n{font-family:'Playfair Display',serif;font-size:2.2rem;font-weight:700;background:linear-gradient(135deg,#8B6914,#C9A84C,#E8C96A,#C9A84C);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .stat-l{font-family:'Lato',sans-serif;font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;color:rgba(201,168,76,0.55);margin-top:0.3rem}
+    .sec-lbl{font-family:'Lato',sans-serif;font-size:0.66rem;letter-spacing:5px;text-transform:uppercase;color:var(--gold);margin-bottom:1rem}
+    .sec-title{font-family:'Playfair Display',serif;font-size:2.8rem;font-weight:700;color:var(--dark);line-height:1.2;margin-bottom:1.5rem}
+    .sec-title.w{color:white}
+    .divider{width:80px;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:0 auto 1rem}
+    .sec-sub{font-family:'Cormorant Garamond',serif;font-size:1.2rem;color:var(--text-light);margin-top:1rem}
+    .sobre{padding:7rem 2.5rem;background:var(--cream)}
+    .sobre-in{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:center}
+    .sobre-txt{padding-left:2rem;border-left:3px solid var(--gold)}
+    .sobre-txt p{font-family:'Cormorant Garamond',serif;font-size:1.2rem;color:var(--text);line-height:1.9;margin-bottom:1.2rem}
+    .sobre-cards{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+    .sobre-card{padding:1.5rem;border:1px solid rgba(201,168,76,0.2);border-radius:4px;background:white;transition:box-shadow 0.2s}
+    .sobre-card:hover{box-shadow:0 4px 20px rgba(201,168,76,0.12)}
+    .sc-icon{font-size:1.5rem;margin-bottom:0.75rem}
+    .sc-title{font-family:'Playfair Display',serif;font-size:0.95rem;font-weight:600;color:var(--dark);margin-bottom:0.5rem}
+    .sc-text{font-family:'Lato',sans-serif;font-size:0.78rem;color:var(--text-light);line-height:1.7}
+    .servicos{padding:7rem 2.5rem;background:var(--cream-dark)}
+    .srv-in{max-width:1100px;margin:0 auto;text-align:center}
+    .srv-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:3.5rem}
+    .srv-card{background:white;border:1px solid rgba(201,168,76,0.18);border-radius:4px;padding:2rem;transition:all 0.3s;position:relative;overflow:hidden;text-align:left}
+    .srv-card::before{content:'';position:absolute;top:0;left:0;width:3px;height:0;background:linear-gradient(180deg,#C9A84C,#8B6914);transition:height 0.3s}
+    .srv-card:hover::before{height:100%}
+    .srv-card:hover{border-color:rgba(201,168,76,0.45);box-shadow:0 8px 30px rgba(201,168,76,0.1);transform:translateY(-2px)}
+    .srv-title{font-family:'Playfair Display',serif;font-size:1.02rem;font-weight:600;color:var(--dark);margin:0.8rem 0 0.6rem}
+    .srv-desc{font-family:'Lato',sans-serif;font-size:0.8rem;color:var(--text-light);line-height:1.7}
+    .faq-sec{padding:7rem 2.5rem;background:var(--cream)}
+    .faq-in{max-width:800px;margin:0 auto}
+    .faq-item{border:1px solid rgba(201,168,76,0.2);border-radius:4px;overflow:hidden;background:white;margin-bottom:1rem}
+    .faq-btn{width:100%;padding:1.4rem 2rem;display:flex;justify-content:space-between;align-items:center;background:none;border:none;cursor:pointer;transition:background 0.2s}
+    .faq-btn:hover{background:rgba(201,168,76,0.05)}
+    .faq-q{font-family:'Playfair Display',serif;font-size:1rem;font-weight:600;color:var(--dark);text-align:left}
+    .faq-arr{color:var(--gold);font-size:1rem;flex-shrink:0;margin-left:1rem}
+    .faq-ans{padding:0 2rem 1.5rem;border-top:1px solid rgba(201,168,76,0.1);display:none}
+    .faq-ans.open{display:block}
+    .faq-ans p{font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:var(--text-light);line-height:1.8;padding-top:1rem}
+    .dep-sec{padding:7rem 2.5rem;background:var(--dark)}
+    .dep-in{max-width:1100px;margin:0 auto;text-align:center}
+    .dep-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:3rem}
+    .dep-card{background:rgba(255,255,255,0.04);border:1px solid rgba(201,168,76,0.18);border-radius:4px;padding:2.5rem;position:relative;text-align:left}
+    .dep-card::before{content:'"';position:absolute;top:1rem;left:1.5rem;font-size:4rem;color:rgba(201,168,76,0.15);font-family:'Playfair Display',serif;line-height:1}
+    .dep-stars{color:var(--gold);letter-spacing:2px;margin-bottom:1.2rem;margin-top:0.5rem}
+    .dep-text{font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:rgba(255,255,255,0.8);line-height:1.8;margin-bottom:1.5rem;font-style:italic}
+    .dep-name{font-family:'Playfair Display',serif;color:var(--gold);font-weight:600}
+    .dep-date{font-family:'Lato',sans-serif;font-size:0.7rem;color:rgba(201,168,76,0.45);margin-top:0.25rem}
+    .cta-sec{padding:6rem 2.5rem;background:linear-gradient(135deg,#C9A84C 0%,#E8C96A 50%,#C9A84C 100%)}
+    .cta-in{max-width:680px;margin:0 auto;text-align:center}
+    .cta-in h2{font-family:'Playfair Display',serif;font-size:2.8rem;font-weight:800;color:#1A1509;margin-bottom:1rem}
+    .cta-in p{font-family:'Cormorant Garamond',serif;font-size:1.25rem;color:#2D2410;line-height:1.8;margin-bottom:2.5rem}
+    .cta-btns{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
+    .orn{display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem}
+    .orn-line{flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(139,105,20,0.5))}
+    .orn-dia{width:6px;height:6px;background:#8B6914;transform:rotate(45deg);flex-shrink:0}
+    .cont-sec{padding:7rem 2.5rem;background:var(--cream)}
+    .cont-in{max-width:1100px;margin:0 auto}
+    .cont-grid{display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:start;margin-top:3.5rem}
+    .form-grp{margin-bottom:1.5rem}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem}
+    .c-label{display:block;font-family:'Lato',sans-serif;font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-light);margin-bottom:0.5rem}
+    .c-input{width:100%;padding:0.875rem 1rem;border:1px solid rgba(201,168,76,0.3);border-radius:2px;font-family:'Lato',sans-serif;font-size:0.9rem;color:var(--text);background:white;transition:border-color 0.2s;outline:none}
+    .c-input:focus{border-color:var(--gold)}
+    .info-card{padding:2rem;border:1px solid rgba(201,168,76,0.2);border-radius:4px;background:white;margin-bottom:1.5rem}
+    .info-row{display:flex;gap:1rem;align-items:flex-start;padding:1rem 0;border-bottom:1px solid rgba(201,168,76,0.1)}
+    .info-row:last-child{border-bottom:none}
+    .i-lbl{font-family:'Lato',sans-serif;font-size:0.66rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-light);margin-bottom:0.3rem}
+    .i-val{font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:var(--dark);line-height:1.6}
+    .map-frame{width:100%;height:300px;border:1px solid rgba(201,168,76,0.2);border-radius:4px;display:block;filter:sepia(15%) saturate(85%)}
+    footer{background:var(--dark);border-top:1px solid rgba(201,168,76,0.15);padding:3.5rem 2.5rem 2rem}
+    .foot-in{max-width:1100px;margin:0 auto}
+    .foot-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:3rem;margin-bottom:3rem}
+    .foot-logo{height:55px;width:auto;display:block;margin-bottom:1.2rem;filter:drop-shadow(0 2px 12px rgba(201,168,76,0.4));background:transparent}
+    .foot-name{font-family:'Playfair Display',serif;color:var(--gold);font-size:0.9rem;font-weight:700;letter-spacing:3px}
+    .foot-sub{font-family:'Lato',sans-serif;color:rgba(201,168,76,0.45);font-size:0.56rem;letter-spacing:4px;margin-top:2px}
+    .foot-desc{font-family:'Cormorant Garamond',serif;color:rgba(255,255,255,0.4);font-size:1rem;line-height:1.8;margin-top:1.2rem}
+    .foot-h{font-family:'Lato',sans-serif;color:var(--gold);font-size:0.65rem;letter-spacing:4px;text-transform:uppercase;margin-bottom:1.5rem}
+    .foot-lnk{font-family:'Lato',sans-serif;color:rgba(255,255,255,0.4);font-size:0.8rem;margin-bottom:0.75rem;cursor:pointer;display:block;text-decoration:none;transition:color 0.2s}
+    .foot-lnk:hover{color:var(--gold)}
+    .foot-ct{font-family:'Cormorant Garamond',serif;color:rgba(255,255,255,0.5);font-size:1rem;line-height:2.1}
+    .foot-bot{border-top:1px solid rgba(201,168,76,0.1);padding-top:2rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
+    .foot-copy{font-family:'Lato',sans-serif;color:rgba(255,255,255,0.25);font-size:0.7rem;letter-spacing:1px}
+    .float-wpp{position:fixed;bottom:2rem;right:2rem;z-index:999;background:none;border:none;cursor:pointer;padding:0;filter:drop-shadow(0 4px 12px rgba(37,211,102,0.6));transition:all 0.3s;animation:pulse-wpp 2.5s infinite}
+    .float-wpp img{width:58px;height:58px;display:block}
+    .float-wpp:hover{transform:scale(1.15);filter:drop-shadow(0 6px 20px rgba(37,211,102,0.9))}
+    @keyframes pulse-wpp{0%,100%{filter:drop-shadow(0 4px 12px rgba(37,211,102,0.6))}50%{filter:drop-shadow(0 4px 24px rgba(37,211,102,1)) drop-shadow(0 0 30px rgba(37,211,102,0.3))}}
+    .tc{text-align:center} .mt2{margin-top:2rem} .mt3{margin-top:3rem}
+    @media(max-width:900px){
+      .sobre-in{grid-template-columns:1fr;gap:3rem}
+      .srv-grid{grid-template-columns:repeat(2,1fr)}
+      .dep-grid{grid-template-columns:repeat(2,1fr)}
+      .cont-grid{grid-template-columns:1fr;gap:2.5rem}
+      .foot-grid{grid-template-columns:1fr 1fr;gap:2rem}
+      .stats-in{grid-template-columns:repeat(2,1fr)}
+      .stat{border-right:none;border-bottom:1px solid rgba(201,168,76,0.15)}
+      .stat:nth-child(odd){border-right:1px solid rgba(201,168,76,0.15)}
+      .stat:last-child{border-bottom:none}
+    }
+    @media(max-width:640px){
+      .nav-in{padding:0 1.2rem;height:64px}
+      .nav-name{font-size:0.78rem;letter-spacing:1.5px}
+      .nav-sub{display:none}
+      .nav-logo{height:36px}
+      .nav-in .btn-wpp{padding:0.6rem 0.9rem;font-size:0.65rem;letter-spacing:1px}
+      .hero{min-height:100svh}
+      .hero-bg{background-position:65% top}
+      .hero-ov{background:linear-gradient(to top,rgba(26,21,9,0.97) 0%,rgba(26,21,9,0.85) 35%,rgba(26,21,9,0.5) 60%,rgba(26,21,9,0.2) 100%),linear-gradient(to bottom,rgba(26,21,9,0.7) 0%,transparent 15%)}
+      .hero-in{padding:64px 1.4rem 0}
+      .hero-logo{width:130px;margin-bottom:1.5rem}
+      .hero-label{font-size:0.6rem;letter-spacing:3px;margin-bottom:0.8rem}
+      .hero h1{font-size:2.4rem;margin-bottom:1rem}
+      .hero-sub{font-size:1.1rem}
+      .hero-hl{font-size:0.7rem;line-height:1.8;margin-bottom:1.8rem}
+      .hero-btns{flex-direction:column;gap:0.75rem}
+      .hero-btns button,.hero-btns .btn-outline{width:100%;justify-content:center;padding:0.9rem 1rem}
+      .hero-badge{bottom:1.5rem;right:1rem;padding:0.8rem 1.1rem}
+      .badge-num{font-size:1.4rem}
+      .stats-in{grid-template-columns:repeat(2,1fr)}
+      .stat{padding:1.4rem 0.8rem}
+      .stat-n{font-size:1.7rem}
+      .stat-l{font-size:0.6rem;letter-spacing:1px}
+      .sobre{padding:4rem 1.4rem}
+      .sobre-in{grid-template-columns:1fr;gap:2.5rem}
+      .sobre-txt{padding-left:1.2rem}
+      .sec-title{font-size:2rem}
+      .sobre-txt p{font-size:1.1rem}
+      .sobre-cards{grid-template-columns:1fr 1fr;gap:1rem}
+      .sobre-card{padding:1.2rem}
+      .servicos{padding:4rem 1.4rem}
+      .srv-grid{grid-template-columns:1fr;gap:1rem;margin-top:2rem}
+      .srv-card{padding:1.5rem}
+      .faq-sec{padding:4rem 1.4rem}
+      .faq-btn{padding:1.2rem 1.2rem}
+      .faq-q{font-size:0.9rem}
+      .faq-ans{padding:0 1.2rem 1.2rem}
+      .dep-sec{padding:4rem 1.4rem}
+      .dep-grid{grid-template-columns:1fr;gap:1.2rem;margin-top:2rem}
+      .dep-card{padding:2rem 1.5rem}
+      .cta-sec{padding:4rem 1.4rem}
+      .cta-in h2{font-size:2rem}
+      .cta-in p{font-size:1.1rem}
+      .cta-btns{flex-direction:column;align-items:center}
+      .cta-btns .btn-dark,.cta-btns .btn-outline-dark{width:100%;text-align:center;justify-content:center}
+      .cont-sec{padding:4rem 1.4rem}
+      .cont-grid{grid-template-columns:1fr;gap:2rem;margin-top:2rem}
+      .form-row{grid-template-columns:1fr;gap:0}
+      .form-row>div:first-child{margin-bottom:1.5rem}
+      footer{padding:3rem 1.4rem 1.5rem}
+      .foot-grid{grid-template-columns:1fr;gap:2rem;margin-bottom:2rem}
+      .foot-bot{flex-direction:column;align-items:flex-start;gap:0.75rem}
+      .float-wpp{bottom:1.2rem;right:1.2rem}
+      .float-wpp img{width:50px;height:50px}
+      .tc .sec-title{font-size:2rem}
+    }
+    @media(max-width:380px){
+      .hero h1{font-size:2rem}
+      .sobre-cards{grid-template-columns:1fr}
+      .hero-badge{display:none}
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-in">
+      <div class="nav-brand">
+        <img class="nav-logo" src="https://d2xsxph8kpxj0f.cloudfront.net/310419663029111455/PopmGcJiGYmBGDP3pSyZ4Z/Escrit_riodeAdvocacia3_38d034b6.png" alt="Logo Aleandro Ferreira" onerror="this.style.display='none'" />
+        <div>
+          <div class="nav-name">ALEANDRO FERREIRA</div>
+          <div class="nav-sub">Advocacia</div>
+        </div>
+      </div>
+      <button class="btn-wpp" onclick="handleWhatsApp()">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" style="width:17px;height:17px" />
+        Falar com Advogado
+      </button>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-bg" style="background-image:url('https://d2xsxph8kpxj0f.cloudfront.net/310419663029111455/PopmGcJiGYmBGDP3pSyZ4Z/Escrit_riodeAdvocacia3_38d034b6.png')"></div>
+    <div class="hero-ov"></div>
+    <div class="hero-in">
+      <img class="hero-logo" src="https://d2xsxph8kpxj0f.cloudfront.net/310419663029111455/PopmGcJiGYmBGDP3pSyZ4Z/Escrit_riodeAdvocacia3_38d034b6.png" alt="Aleandro Ferreira Advocacia" onerror="this.style.display='none'" />
+      <div class="hero-label">Especialista em Direito Previdenciário</div>
+      <h1>Seu Direito à <span>Aposentadoria</span><br/>é Nossa Missão</h1>
+      <div class="hero-div"></div>
+      <p class="hero-sub">Com mais de 25 anos de experiência em Direito Previdenciário, ajudamos milhares de brasileiros a conquistar os benefícios que merecem.</p>
+      <p class="hero-hl">✓ Atendimento em Todo o Brasil &nbsp;|&nbsp; ✓ 98% de Taxa de Sucesso &nbsp;|&nbsp; ✓ Consulta Online</p>
+      <div class="hero-btns">
+        <button class="btn-wpp" onclick="handleWhatsApp()" style="font-size:0.8rem;padding:1rem 2rem">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" style="width:20px;height:20px" />
+          Preciso de Ajuda
+        </button>
+        <button class="btn-outline" onclick="document.getElementById('contato').scrollIntoView({behavior:'smooth'})">
+          Saiba Mais
+        </button>
+      </div>
+    </div>
+    <div class="hero-badge">
+      <div class="badge-num">4.9 ⭐</div>
+      <div class="badge-lbl">Google Avaliações</div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <section class="stats">
+    <div class="stats-in">
+      <div class="stat"><div class="stat-n">25+</div><div class="stat-l">Anos de Experiência</div></div>
+      <div class="stat"><div class="stat-n">5.000+</div><div class="stat-l">Clientes Atendidos</div></div>
+      <div class="stat"><div class="stat-n">98%</div><div class="stat-l">Taxa de Sucesso</div></div>
+      <div class="stat"><div class="stat-n">Todo Brasil</div><div class="stat-l">Área de Atuação</div></div>
+    </div>
+  </section>
+
+  <!-- SOBRE -->
+  <section class="sobre">
+    <div class="sobre-in">
+      <div class="sobre-txt">
+        <div class="sec-lbl">Sobre o Advogado</div>
+        <div class="sec-title">Dr. Aleandro Ferreira</div>
+        <p>Advogado especialista em Direito Previdenciário com mais de <strong>25 anos de atuação</strong>. Minha missão é garantir que você receba todos os benefícios que tem direito junto ao INSS, sem deixar dinheiro na mesa.</p>
+        <p style="color:var(--text-light)">Trabalho com transparência, dedicação e conhecimento técnico profundo para resolver os casos mais complexos de aposentadoria, auxílio-doença, pensão por morte e muito mais.</p>
+      </div>
+      <div class="sobre-cards">
+        <div class="sobre-card">
+          <div class="sc-icon">🛡️</div>
+          <div class="sc-title">Ética Profissional</div>
+          <div class="sc-text">Compromisso absoluto com a ética e transparência em cada caso.</div>
+        </div>
+        <div class="sobre-card">
+          <div class="sc-icon">🏆</div>
+          <div class="sc-title">Alta Especialização</div>
+          <div class="sc-text">Especialista exclusivo em Direito Previdenciário.</div>
+        </div>
+        <div class="sobre-card">
+          <div class="sc-icon">🤝</div>
+          <div class="sc-title">Atendimento Humanizado</div>
+          <div class="sc-text">Cada cliente recebe atenção personalizada e dedicada.</div>
+        </div>
+        <div class="sobre-card">
+          <div class="sc-icon">✅</div>
+          <div class="sc-title">Resultados Comprovados</div>
+          <div class="sc-text">98% de taxa de sucesso em mais de 5.000 casos.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVIÇOS -->
+  <section class="servicos">
+    <div class="srv-in">
+      <div class="sec-lbl">Áreas de Atuação</div>
+      <div class="sec-title">Nossos Serviços</div>
+      <div class="divider"></div>
+      <p class="sec-sub">Soluções completas em Direito Previdenciário para todo o Brasil</p>
+      <div class="srv-grid">
+        <div class="srv-card">
+          <div style="color:var(--gold);font-size:1.4rem">✔</div>
+          <div class="srv-title">Aposentadoria por Idade</div>
+          <div class="srv-desc">Conquiste sua aposentadoria com o máximo de benefício garantido.</div>
+        </div>
+        <div class="srv-card">
+          <div style="color:var(--gold);font-size:1.4rem">✔</div>
+          <div class="srv-title">Aposentadoria por Invalidez</div>
+          <div class="srv-desc">Defesa do seu direito à aposentadoria por incapacidade permanente.</div>
+        </div>
+        <div class="srv-card">
+          <div style="color:var(--gold);font-size:1.4rem">✔</div>
+          <div class="srv-title">Aposentadoria Rural</div>
+          <div class="srv-desc">Especialistas em direitos previdenciários para trabalhadores rurais.</div>
+        </div>
+        <div class="srv-card">
+          <div style="color:var(--gold);font-size:1.4rem">✔</div>
+          <div class="srv-title">Auxílio-Doença</div>
+          <div class="srv-desc">Orientação especializada para conseguir seu auxílio junto ao INSS.</div>
+        </div>
+        <div class="srv-card">
+          <div style="color:var(--gold);font-size:1.4rem">✔</div>
+          <div class="srv-title">Revisão de Benefícios</div>
+          <div class="srv-desc">Aumente o valor do seu benefício através de revisões legais.</div>
+        </div>
+        <div class="srv-card">
+          <div style="color:var(--gold);font-size:1.4rem">✔</div>
+          <div class="srv-title">Pensão por Morte</div>
+          <div class="srv-desc">Garantia dos direitos dos dependentes após o falecimento do segurado.</div>
+        </div>
+        <div class="srv-card">
+          <div style="color:var(--gold);font-size:1.4rem">✔</div>
+          <div class="srv-title">Planejamento Previdenciário</div>
+          <div class="srv-desc">Análise personalizada para otimizar seus direitos e benefícios futuros.</div>
+        </div>
+        <div class="srv-card">
+          <div style="color:var(--gold);font-size:1.4rem">✔</div>
+          <div class="srv-title">Perícia Médica INSS</div>
+          <div class="srv-desc">Preparação completa para sua perícia com sucesso garantido.</div>
+        </div>
+        <div class="srv-card">
+          <div style="color:var(--gold);font-size:1.4rem">✔</div>
+          <div class="srv-title">Recursos e Ações Judiciais</div>
+          <div class="srv-desc">Representação completa em recursos administrativos e judiciais.</div>
+        </div>
+      </div>
+      <div class="tc mt3">
+        <button class="btn-wpp" onclick="handleWhatsApp()" style="display:inline-flex;font-size:0.8rem">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" style="width:18px;height:18px" />
+          Agendar Consulta Online
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="faq-sec">
+    <div class="faq-in">
+      <div class="tc">
+        <div class="sec-lbl">Tire Suas Dúvidas</div>
+        <div class="sec-title">Perguntas Frequentes</div>
+        <div class="divider"></div>
+      </div>
+      <div style="margin-top:3rem">
+
+        <div class="faq-item">
+          <button class="faq-btn" onclick="toggleFaq(this)">
+            <span class="faq-q">Com quantos anos posso me aposentar?</span>
+            <span class="faq-arr">▼</span>
+          </button>
+          <div class="faq-ans">
+            <p>A idade mínima para aposentadoria varia conforme o tipo. Para aposentadoria por idade: 62 anos (mulheres) e 65 anos (homens). Para aposentadoria por tempo de contribuição, não há idade mínima. Consulte-me para saber qual é a melhor opção para seu caso.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" onclick="toggleFaq(this)">
+            <span class="faq-q">Como solicitar auxílio-acidente?</span>
+            <span class="faq-arr">▼</span>
+          </button>
+          <div class="faq-ans">
+            <p>O auxílio-acidente é um benefício para quem sofreu acidente de trabalho e ficou com sequelas. Você precisa ter sofrido acidente de trabalho, ter sequelas permanentes e estar contribuindo ao INSS. Posso ajudá-lo com toda a documentação e acompanhar o processo.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" onclick="toggleFaq(this)">
+            <span class="faq-q">Como saber se tenho direito a auxílio-acidente?</span>
+            <span class="faq-arr">▼</span>
+          </button>
+          <div class="faq-ans">
+            <p>Você tem direito se: sofreu acidente de trabalho, ficou com incapacidade parcial permanente, está filiado ao INSS e contribuiu por pelo menos 12 meses. Entre em contato para analisarmos seu caso específico.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" onclick="toggleFaq(this)">
+            <span class="faq-q">Meu benefício foi indeferido pelo INSS, o que devo fazer?</span>
+            <span class="faq-arr">▼</span>
+          </button>
+          <div class="faq-ans">
+            <p>Se seu benefício foi negado, você tem direito a recorrer! Posso ajudá-lo a analisar o motivo da negação, preparar um recurso administrativo e entrar com ação judicial se necessário. Muitos clientes conseguem reverter negações com a estratégia correta.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" onclick="toggleFaq(this)">
+            <span class="faq-q">Não sou registrado e sofri um acidente na empresa, tenho direito?</span>
+            <span class="faq-arr">▼</span>
+          </button>
+          <div class="faq-ans">
+            <p>Sim! Mesmo sem registro formal, você pode ter direito a indenização por danos morais e materiais. Além disso, se conseguirmos comprovar a relação de trabalho, você pode ter direito a benefícios previdenciários. Vamos analisar seu caso em detalhes.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" onclick="toggleFaq(this)">
+            <span class="faq-q">Qual é o valor dos honorários?</span>
+            <span class="faq-arr">▼</span>
+          </button>
+          <div class="faq-ans">
+            <p>Meus honorários são flexíveis e adaptados à sua realidade. Posso trabalhar com honorários fixos, honorários sucumbenciais (você paga apenas se ganhar) ou parcelamento. Entre em contato para discutirmos as melhores opções para você.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" onclick="toggleFaq(this)">
+            <span class="faq-q">Quanto tempo leva para conseguir a aposentadoria?</span>
+            <span class="faq-arr">▼</span>
+          </button>
+          <div class="faq-ans">
+            <p>O tempo varia conforme o tipo de benefício e a complexidade do caso. Aposentadorias simples podem levar 2-4 meses. Casos mais complexos podem levar 6-12 meses ou mais. Vou orientá-lo sobre os prazos específicos do seu caso.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" onclick="toggleFaq(this)">
+            <span class="faq-q">Vocês atuam em qual região?</span>
+            <span class="faq-arr">▼</span>
+          </button>
+          <div class="faq-ans">
+            <p>Atendemos em todo o Brasil! Temos escritório físico em Anápolis, Goiás, mas atendemos clientes remotamente via WhatsApp, e-mail e videoconferência de qualquer estado do país.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- DEPOIMENTOS -->
+  <section class="dep-sec">
+    <div class="dep-in">
+      <div class="sec-lbl" style="color:rgba(201,168,76,0.7)">Depoimentos</div>
+      <div class="sec-title w">O Que Nossos Clientes Dizem</div>
+      <div class="divider" style="background:linear-gradient(90deg,transparent,rgba(201,168,76,0.55),transparent)"></div>
+      <p style="font-family:'Lato',sans-serif;font-size:0.8rem;color:var(--gold);letter-spacing:2px;margin-top:1rem">⭐ 4.9 de 5 — Mais de 40 avaliações no Google</p>
+      <div class="dep-grid">
+        <div class="dep-card">
+          <div class="dep-stars">★★★★★</div>
+          <p class="dep-text">"Consegui minha aposentadoria em 3 meses com a ajuda do Dr. Aleandro. Ele foi muito atencioso e explicou tudo de forma clara. Super recomendo!"</p>
+          <div class="dep-name">Maria Silva</div>
+          <div class="dep-date">Há 2 meses</div>
+        </div>
+        <div class="dep-card">
+          <div class="dep-stars">★★★★★</div>
+          <p class="dep-text">"Meu benefício foi indeferido pelo INSS, mas o Dr. Aleandro conseguiu reverter a decisão. Muito profissional e dedicado ao caso!"</p>
+          <div class="dep-name">João Santos</div>
+          <div class="dep-date">Há 1 mês</div>
+        </div>
+        <div class="dep-card">
+          <div class="dep-stars">★★★★★</div>
+          <p class="dep-text">"Consultei o Dr. Aleandro sobre minha aposentadoria e ele me mostrou que eu tinha direito a um valor muito maior. Muito grata pela orientação!"</p>
+          <div class="dep-name">Fernanda Costa</div>
+          <div class="dep-date">Há 3 semanas</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-sec">
+    <div class="cta-in">
+      <div class="orn">
+        <div class="orn-line"></div>
+        <div class="orn-dia"></div>
+        <div class="orn-line" style="background:linear-gradient(90deg,rgba(139,105,20,0.5),transparent)"></div>
+      </div>
+      <h2>Pronto para Garantir Seus Direitos?</h2>
+      <p>Entre em contato agora e descubra como podemos ajudá-lo a conquistar a aposentadoria e os benefícios que você merece — em todo o Brasil.</p>
+      <div class="cta-btns">
+        <button class="btn-dark" onclick="handleWhatsApp()">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" style="width:20px;height:20px" />
+          Falar no WhatsApp
+        </button>
+        <a href="tel:+5562992903461" class="btn-outline-dark">(62) 99290-3461</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTATO -->
+  <section class="cont-sec" id="contato">
+    <div class="cont-in">
+      <div class="tc">
+        <div class="sec-lbl">Fale Conosco</div>
+        <div class="sec-title">Entre em Contato</div>
+        <div class="divider"></div>
+        <p class="sec-sub">Atendemos presencialmente em Anápolis e remotamente em todo o Brasil</p>
+      </div>
+      <div class="cont-grid">
+        <form onsubmit="handleFormSubmit(event)">
+          <div class="form-grp">
+            <label class="c-label">Nome Completo</label>
+            <input type="text" required class="c-input" placeholder="Seu nome completo" id="f-name" />
+          </div>
+          <div class="form-row">
+            <div>
+              <label class="c-label">E-mail</label>
+              <input type="email" required class="c-input" placeholder="seu@email.com" id="f-email" />
+            </div>
+            <div>
+              <label class="c-label">Telefone</label>
+              <input type="tel" required class="c-input" placeholder="(62) 99290-3461" id="f-phone" />
+            </div>
+          </div>
+          <div class="form-grp">
+            <label class="c-label">Descreva Seu Caso</label>
+            <textarea required rows="5" class="c-input" placeholder="Conte-me sobre sua situação..." id="f-msg" style="resize:vertical"></textarea>
+          </div>
+          <button type="submit" class="btn-wpp" style="width:100%;justify-content:center;padding:1.1rem;font-size:0.8rem">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" style="width:20px;height:20px" />
+            Enviar e Falar no WhatsApp
+          </button>
+        </form>
+        <div>
+          <div class="info-card">
+            <div class="info-row">
+              <span>📍</span>
+              <div>
+                <div class="i-lbl">Endereço</div>
+                <div class="i-val">Rua Viena, Q. 05, L. 11<br/>Bairro Parque das Nações<br/>Anápolis, Goiás</div>
+              </div>
+            </div>
+            <div class="info-row">
+              <span>📞</span>
+              <div>
+                <div class="i-lbl">Telefone / WhatsApp</div>
+                <a href="tel:+5562992903461" class="i-val" style="text-decoration:none;color:var(--dark)">(62) 99290-3461</a>
+              </div>
+            </div>
+            <div class="info-row">
+              <span>🕐</span>
+              <div>
+                <div class="i-lbl">Atendimento</div>
+                <div class="i-val">Seg – Sex: 8h às 18h<br/><span style="color:var(--gold)">🌐 Atendemos em todo o Brasil</span></div>
+              </div>
+            </div>
+          </div>
+          <iframe class="map-frame"
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3748.831949282!2d-48.95694!3d-16.3268!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x935ef34b9c45b22b%3A0x0!2zUGFycXVlIGRhcyBOYcOnw7VlcywgQW7DoXBvbGlzIC0gR08!5e0!3m2!1spt-BR!2sbr!4v1700000000000!5m2!1spt-BR!2sbr"
+            allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Localização">
+          </iframe>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="foot-in">
+      <div class="foot-grid">
+        <div>
+          <img class="foot-logo" src="https://d2xsxph8kpxj0f.cloudfront.net/310419663029111455/PopmGcJiGYmBGDP3pSyZ4Z/Escrit_riodeAdvocacia3_38d034b6.png" alt="Logo" onerror="this.style.display='none'" />
+          <div class="foot-name">ALEANDRO FERREIRA</div>
+          <div class="foot-sub">Advocacia</div>
+          <p class="foot-desc">Especialista em Direito Previdenciário. Atendemos clientes em todo o Brasil com comprometimento e excelência.</p>
+        </div>
+        <div>
+          <div class="foot-h">Serviços</div>
+          <a class="foot-lnk" onclick="handleWhatsApp()">Aposentadoria por Idade</a>
+          <a class="foot-lnk" onclick="handleWhatsApp()">Auxílio-Doença</a>
+          <a class="foot-lnk" onclick="handleWhatsApp()">Pensão por Morte</a>
+          <a class="foot-lnk" onclick="handleWhatsApp()">Revisão de Benefícios</a>
+          <a class="foot-lnk" onclick="handleWhatsApp()">Perícia Médica INSS</a>
+        </div>
+        <div>
+          <div class="foot-h">Contato</div>
+          <div class="foot-ct">
+            Rua Viena, Q.05, L.11<br/>
+            Parque das Nações<br/>
+            Anápolis – GO<br/>
+            (62) 99290-3461<br/>
+            <span style="color:var(--gold)">Atendemos em Todo o Brasil</span>
+          </div>
+        </div>
+      </div>
+      <div class="foot-bot">
+        <div class="foot-copy">© 2026 Aleandro Ferreira Advocacia — Todos os direitos reservados</div>
+        <div style="display:flex;gap:2rem">
+          <a href="#" class="foot-lnk" style="margin:0">Política de Privacidade</a>
+          <a href="#" class="foot-lnk" style="margin:0">Termos de Serviço</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- BOTÃO FLUTUANTE -->
+  <button class="float-wpp" onclick="handleWhatsApp()" title="Fale conosco no WhatsApp">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" />
+  </button>
+
+  <script>
+    const WPP_NUMBER = '5562992903461';
+    const WPP_MSG = 'Olá! Gostaria de agendar uma consulta online sobre direito previdenciário.';
+
+    function handleWhatsApp() {
+      const encoded = encodeURIComponent(WPP_MSG);
+      window.open('https://wa.me/' + WPP_NUMBER + '?text=' + encoded, '_blank');
+    }
+
+    function handleFormSubmit(e) {
+      e.preventDefault();
+      handleWhatsApp();
+    }
+
+    function toggleFaq(btn) {
+      const ans = btn.nextElementSibling;
+      const arr = btn.querySelector('.faq-arr');
+      const isOpen = ans.classList.contains('open');
+      // Fecha todos
+      document.querySelectorAll('.faq-ans').forEach(a => a.classList.remove('open'));
+      document.querySelectorAll('.faq-arr').forEach(a => a.textContent = '▼');
+      // Abre o clicado (se estava fechado)
+      if (!isOpen) {
+        ans.classList.add('open');
+        arr.textContent = '▲';
+      }
+    }
+  </script>
+
+</body>
+</html>
