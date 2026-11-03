@@ -2,6 +2,7 @@
 <html lang="pt-BR"><head><meta charset="utf-8"><title>Prorrogação negada — gráficos</title>
 <style>html,body{margin:0;background:#0b0805;overflow:hidden}canvas{display:block}</style></head>
 <body><canvas id="c"></canvas>
+<script src="lousa.js"></script>
 <script>
 const W = innerWidth, H = innerHeight, S = W / 1920;
 const cv = document.getElementById('c'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
@@ -162,12 +163,12 @@ const CH = [];
 function chapters() {
   CH.length = 0;
   const A0 = CU.t_audio, AE = CU.t_audio_end;
-  CH.push({ t0: A0, t1: CU.a_antigamente - 0.3, n: '01', title: 'Retorno forçado ao trabalho', sub: 'Prorrogação negada não significa que você está curada', draw: ch1 });
-  CH.push({ t0: CU.a_antigamente - 0.3, t1: CU.a_detalhe - 0.3, n: '02', title: 'STF · Tema 1125', sub: 'A Justiça mudou de entendimento', draw: ch2 });
-  CH.push({ t0: CU.a_detalhe - 0.3, t1: CU.a_prova - 0.3, n: '03', title: 'O que decide se você ganha ou perde', sub: 'Duas situações diferentes', draw: ch3 });
-  CH.push({ t0: CU.a_prova - 0.3, t1: CU.a_coisa - 0.3, n: '04', title: 'Três provas que o juiz mais aceita', sub: 'Guarde e organize esses documentos', draw: ch4 });
-  CH.push({ t0: CU.a_coisa - 0.3, t1: CU.a_entao - 0.3, n: '05', title: 'Não precisa de carteira assinada', sub: 'O direito é o mesmo', draw: ch5 });
-  CH.push({ t0: CU.a_entao - 0.3, t1: AE, n: '06', title: 'Guarde tudo', sub: 'Esse tempo pode virar dinheiro no seu bolso', draw: ch6 });
+  CH.push({ t0: A0, t1: CU.a_antigamente - 0.3, n: '01', title: 'Retorno forçado ao trabalho', sub: 'Prorrogação negada não significa que você está curada', draw: (t, c) => lousaDraw(c.n, t) });
+  CH.push({ t0: CU.a_antigamente - 0.3, t1: CU.a_detalhe - 0.3, n: '02', title: 'STF · Tema 1125', sub: 'A Justiça mudou de entendimento', draw: (t, c) => lousaDraw(c.n, t) });
+  CH.push({ t0: CU.a_detalhe - 0.3, t1: CU.a_prova - 0.3, n: '03', title: 'O que decide se você ganha ou perde', sub: 'Duas situações diferentes', draw: (t, c) => lousaDraw(c.n, t) });
+  CH.push({ t0: CU.a_prova - 0.3, t1: CU.a_coisa - 0.3, n: '04', title: 'Três provas que o juiz mais aceita', sub: 'Guarde e organize esses documentos', draw: (t, c) => lousaDraw(c.n, t) });
+  CH.push({ t0: CU.a_coisa - 0.3, t1: CU.a_entao - 0.3, n: '05', title: 'Não precisa de carteira assinada', sub: 'O direito é o mesmo', draw: (t, c) => lousaDraw(c.n, t) });
+  CH.push({ t0: CU.a_entao - 0.3, t1: AE, n: '06', title: 'Guarde tudo', sub: 'Esse tempo pode virar dinheiro no seu bolso', draw: (t, c) => lousaDraw(c.n, t) });
 }
 function ch1(t, c) {
   header(c.n, c.title, c.sub, c.t0, t); const lt = t - c.t0;
@@ -314,9 +315,9 @@ function drawCover() {
 }
 
 (async () => {
-  try { const F = [['Playfair', 'fonts/Playfair800.woff2', '800'], ['Montserrat', 'fonts/Montserrat500.woff2', '500'], ['Montserrat', 'fonts/Montserrat700.woff2', '700'], ['Montserrat', 'fonts/Montserrat800.woff2', '800']]; for (const [n, u, w] of F) { const f = new FontFace(n, `url(${u})`, { weight: w }); await f.load(); document.fonts.add(f); } } catch (e) { console.error('[font]', e); }
-  TL = await (await fetch('timeline.json')).json(); CU = TL.cues; window.DUR = Q.get('end') ? parseFloat(Q.get('end')) : CU.dur; buildScenes();
+  try { const F = [['Playfair', 'fonts/Playfair800.woff2', '800'], ['Montserrat', 'fonts/Montserrat500.woff2', '500'], ['Montserrat', 'fonts/Montserrat700.woff2', '700'], ['Montserrat', 'fonts/Montserrat800.woff2', '800'], ['Caveat', 'fonts/Caveat.woff2', '600']]; for (const [n, u, w] of F) { const f = new FontFace(n, `url(${u})`, { weight: w }); await f.load(); document.fonts.add(f); } } catch (e) { console.error('[font]', e); }
+  TL = await (await fetch('timeline.json')).json(); CU = TL.cues; window.DUR = Q.get('end') ? parseFloat(Q.get('end')) : CU.dur; buildScenes(); bakeBoard(); buildLousa();
   IMG.af = await load('assets/logo-af.png'); IMG.inss = await load('assets/logo-inss.png'); IMG.photo = await load('assets/capa-foto.jpg');
-  window.EV = TL.ev || []; render(Q.get('cover') ? 0 : 1); window.READY = true;
+  render(Q.get('cover') ? 0 : 1); window.READY = true;
 })();
 </script></body></html>

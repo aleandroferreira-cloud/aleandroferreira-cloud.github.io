@@ -134,6 +134,20 @@ for e in TL['ev']:
         place(sfx, bell(2637, 0.9) * 0.09, t0, 1.0, 0.2); place(sfx, bell(3322, 1.0) * 0.09, t0 + 0.11, 1.0, 0.25)
     elif ty == 'tick':
         tt = np.arange(int(0.05 * SR)) / SR; place(sfx, bp(rng.standard_normal(len(tt)), 2500, 7000) * np.exp(-tt * 110) * 0.35, t0, 0.5, rng.uniform(-0.3, 0.3))
+# giz na lousa e apagador (eventos exportados pela pagina em events.json)
+EVJ = json.load(open(os.path.join(HERE, 'events.json')))['ev']
+for e in EVJ:
+    t0, d = e['t'], max(0.06, e.get('d', 0.3)); n = int(d * SR); tt = np.arange(n) / SR
+    if e['type'] == 'chalk':
+        gain = 0.05 * (0.55 + min(1.0, e.get('len', 100) / 500)) * (0.8 if e.get('acc') else 1.0)
+        x = bp(rng.standard_normal(n), 1800 if not e.get('acc') else 1300, 7500 if not e.get('acc') else 5200)
+        grains = np.convolve((rng.random(n) < 0.0045).astype(float), np.hanning(60), mode='same')
+        env = np.minimum(1, tt / 0.02) * np.minimum(1, (d - tt) / 0.04) * (0.55 + 0.45 * np.sin(2 * np.pi * rng.uniform(5, 9) * tt) ** 2)
+        place(sfx, x * (0.35 + 6 * smooth(grains, 0.002)) * env, t0, gain, rng.uniform(-0.4, 0.4))
+    elif e['type'] == 'wipe':
+        x = lp(rng.standard_normal(n), 1400) + 0.6 * bp(rng.standard_normal(n), 200, 700)
+        env = np.sin(np.pi * np.clip(tt / d, 0, 1)) ** 1.1 * (0.7 + 0.3 * np.sin(2 * np.pi * 3.2 * tt))
+        place(sfx, x * env * 0.16, t0, 1.0, 0.0)
 sfx = sfx[:len(music)]
 
 # ---------------- mixagens ----------------
