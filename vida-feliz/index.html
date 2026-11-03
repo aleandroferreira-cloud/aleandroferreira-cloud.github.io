@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Vida feliz</title>
+<style>html,body{margin:0;background:#f4ebd8;overflow:hidden}canvas{display:block}</style></head>
+<body><canvas id="c"></canvas>
+<script>
+const W = innerWidth, H = innerHeight, S = W / 1920;
+const cv = document.getElementById('c'); cv.width = W; cv.height = H;
+const main = cv.getContext('2d');
+let g = main;
+const PL = document.createElement('canvas'); PL.width = W; PL.height = H;   // camada dos problemas (a névoa apaga)
+const plg = PL.getContext('2d');
+
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, t) => a + (b - a) * t;
+const ss = t => { t = clamp(t); return t * t * (3 - 2 * t); };
+function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const R = mulberry(20261103);
+const rnd = (a = 0, b = 1) => a + (b - a) * R();
+const NT = new Float32Array(256); for (let i = 0; i < 256; i++) NT[i] = R() * 2 - 1;
+const vn = x => { const i = Math.floor(x), f = x - i, a = NT[i & 255], b = NT[(i + 1) & 255], u = f * f * (3 - 2 * f); return a + (b - a) * u; };
+const rgb = h => { h = h.replace('#', ''); return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]; };
+const PAPER = '#f4ebd8', INK = '#4a3a2c', ACC = '#c8442a';
+window.DUR = 26.6;
+
+// ---------- pincel ----------
+function catmull(c, step = 6) {
+  const out = [], P = [c[0], ...c, c[c.length - 1]];
+  for (let i = 1; i < P.length - 2; i++) {
+    const p0 = P[i - 1], p1 = P[i], p2 = P[i + 1], p3 = P[i + 2];
+    const n = Math.max(2, Math.ceil(Math.hypot(p2[0] - p1[0], p2[1] - p1[1]) / step));
+    for (let k = 0; k < n; k++) {
+      const t = k / n, t2 = t * t, t3 = t2 * t, f = (a, b, c2, d) => 0.5 * ((2 * b) + (-a + c2) * t + (2 * a - 5 * b + 4 * c2 - d) * t2 + (-a + 3 * b - 3 * c2 + d) * t3);
+      out.push([f(p0[0], p1[0], p2[0], p3[0]), f(p0[1], p1[1], p2[1], p3[1])]);
+    }
+  }
+  out.push(c[c.length - 1]); return out;
+}
+const PROF = {
+  brush: u => Math.pow(Math.sin(Math.PI * clamp(u * 0.92 + 0.04)), 0.55) * (1 - 0.25 * u),
+  leaf: u => Math.pow(Math.sin(Math.PI * u), 0.8),
+  even: u => Math.sqrt(Math.min(1, u * 8, (1 - u) * 8)),
+  tip: u => Math.pow(1 - u, 0.8) * Math.sqrt(Math.min(1, u * 10)),
+  trunk: u => 1 - 0.55 * u, flat: () => 1,
+};
+function mk(ctrl, Wd, col, al, prof, t0, t1, o = {}) {
+  const pts = catmull(ctrl, o.step || 6), n = pts.length, nx = [], ny = [], hw = [];
+  const seed = rnd(0, 200), rough = o.rough ?? 0.22;
+  for (let i = 0; i < n; i++) {
+    const a = pts[Math.max(0, i - 1)], b = pts[Math.min(n - 1, i + 1)];
+    let tx = b[0] - a[0], ty = b[1] - a[1]; const l = Math.hypot(tx, ty) || 1; tx /= l; ty /= l;
+    nx.push(-ty); ny.push(tx);
+    const u = i / (n - 1);
+    hw.push((o.wf ? o.wf(u) : Wd * PROF[prof](u)) / 2 * (1 + rough * vn(seed + i * 0.35)));
+  }
+  const nb = o.nb ?? (Wd > 10 ? 4 : Wd > 5 ? 2 : 0), br = [];
+  for (let k = 0; k < nb; k++) br.push({ off: rnd(-0.7, 0.7), dash: [rnd(6, 26), rnd(3, 16)], end: rnd(0.72, 1), a: rnd(0.3, 0.8) });
+  return { pts, nx, ny, hw, br, col: rgb(col), al, t0, t1, n, cap: o.cap ?? 1 };
+}
+function drawS(s, t, mul = 1) {
+  const p = Math.min(s.cap, ss((t - s.t0) / (s.t1 - s.t0))); if (p <= 0) return;
+  const m = Math.max(2, Math.min(s.n, Math.ceil(p * s.n))), c = s.col.join(',');
+  g.beginPath();
+  for (let i = 0; i < m; i++) { const x = s.pts[i][0] + s.nx[i] * s.hw[i], y = s.pts[i][1] + s.ny[i] * s.hw[i]; i ? g.lineTo(x, y) : g.moveTo(x, y); }
+  for (let i = m - 1; i >= 0; i--) g.lineTo(s.pts[i][0] - s.nx[i] * s.hw[i], s.pts[i][1] - s.ny[i] * s.hw[i]);
+  g.closePath(); g.fillStyle = `rgba(${c},${s.al * mul})`; g.fill();
+  for (const b of s.br) {
+    const e = Math.min(m, Math.ceil(b.end * s.n)); if (e < 2) continue;
+    g.beginPath();
+    for (let i = 0; i < e; i++) { const x = s.pts[i][0] + s.nx[i] * s.hw[i] * b.off * 1.6, y = s.pts[i][1] + s.ny[i] * s.hw[i] * b.off * 1.6; i ? g.lineTo(x, y) : g.moveTo(x, y); }
+    g.setLineDash(b.dash); g.lineWidth = 1.2; g.strokeStyle = `rgba(${c},${Math.min(1, b.a * s.al * 1.3 * mul)})`; g.stroke();
+  }
+  g.setLineDash([]);
+}
+const bbox = poly => { let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; for (const [x, y] of poly) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); } return { x0, y0, x1, y1, w: x1 - x0, h: y1 - y0 }; };
+function wash(poly, col, al, t0, t1, mode = 'x') {
+  return { passes: [0, 1, 2].map(() => poly.map(([x, y]) => [x + rnd(-5, 5), y + rnd(-5, 5)])), bb: bbox(poly), col: rgb(col).join(','), al, t0, t1, mode };
+}
+function drawW(w, t, mul = 1) {
+  const p = ss((t - w.t0) / (w.t1 - w.t0)); if (p <= 0) return;
+  const bb = w.bb; g.save();
+  if (p < 1) {
+    g.beginPath();
+    if (w.mode === 'x') { const ex = bb.x0 - 80 + (bb.w + 160) * p; g.moveTo(bb.x0 - 100, bb.y0 - 100); for (let y = bb.y0 - 100; y <= bb.y1 + 100; y += 24) g.lineTo(ex + 30 * Math.sin(y * 0.021) + 14 * Math.sin(y * 0.05), y); g.lineTo(bb.x0 - 100, bb.y1 + 100); }
+    else if (w.mode === 'y') { const ey = bb.y0 - 80 + (bb.h + 160) * p; g.moveTo(bb.x0 - 100, bb.y0 - 100); for (let x = bb.x0 - 100; x <= bb.x1 + 100; x += 24) g.lineTo(x, ey + 24 * Math.sin(x * 0.03) + 10 * Math.sin(x * 0.07)); g.lineTo(bb.x1 + 100, bb.y0 - 100); }
+    else g.arc(bb.x0 + bb.w / 2, bb.y0 + bb.h / 2, Math.hypot(bb.w, bb.h) / 2 * 1.08 * p, 0, 7);
+    g.closePath(); g.clip();
+  }
+  g.fillStyle = `rgba(${w.col},${w.al / 3 * mul})`;
+  for (const ps of w.passes) { g.beginPath(); ps.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.closePath(); g.fill(); }
+  g.restore();
+}
+const blob = (cx, cy, rx, ry, n = 30, wob = 0.15) => {
+  const a1 = rnd(0, 6.28), a2 = rnd(0, 6.28), pts = [];
+  for (let i = 0; i < n; i++) { const a = i / n * 6.2832, r = 1 + wob * (0.6 * Math.sin(3 * a + a1) + 0.4 * Math.sin(5 * a + a2)); pts.push([cx + Math.cos(a) * rx * r, cy + Math.sin(a) * ry * r]); }
+  return pts;
+};
+const ridge = (y0, amp, x0, x1, bottom, sc) => { const s = rnd(0, 200), pts = []; for (let x = x0; x <= x1; x += 40) pts.push([x, y0 + amp * vn(s + x * sc)]); return { top: pts, poly: [...pts, [x1, bottom], [x0, bottom]] }; };
+
+// ---------- mundo ----------
+const BG = [], PROB = [], FLOWERS = [], FIG = [], NOTES = [], TOP = [];
+const add = (arr, o) => (arr.push(o), o);
+// céu
+add(BG, wash([[-300, -300], [2800, -300], [2800, 720], [-300, 720]], '#f2dcb5', 0.55, 1.0, 3.2, 'x'));
+{ const r = ridge(470, 60, -300, 2800, -300, 0.004); add(BG, wash([...r.top.slice().reverse().map(([x, y]) => [x, y]), [-300, -300], [2800, -300]].slice(0), '#b4ccd6', 0.5, 1.4, 3.6, 'x')); }
+// colinas
+{ const r = ridge(595, 38, -300, 2800, 840, 0.006); add(BG, wash(r.poly, '#8fa6b4', 0.5, 2.4, 4.4, 'x')); add(BG, mk(r.top.map(([x, y]) => [x, y + 2]).filter((_, i) => i % 2 === 0), 5, '#5f7486', 0.45, 'brush', 2.8, 5.0, { nb: 1, step: 8 })); }
+{ const r = ridge(665, 30, -300, 2800, 900, 0.007); add(BG, wash(r.poly, '#9db07c', 0.55, 3.0, 5.0, 'x')); add(BG, mk(r.top.filter((_, i) => i % 2 === 0), 5, '#5f7f50', 0.4, 'brush', 3.3, 5.4, { nb: 1, step: 8 })); }
+// árvores
+function tree(x, y, s, t0) {
+  add(BG, mk([[x, y], [x + 3 * s, y - 32 * s], [x - 2 * s, y - 66 * s]], 10 * s, '#6b5a46', 0.8, 'trunk', t0, t0 + 0.9, { nb: 2 }));
+  [['#7f9a62', 0, -80, 44], ['#9db07c', -26, -64, 34], ['#5f7f50', 26, -66, 32]].forEach(([c, dx, dy, r], i) =>
+    add(BG, wash(blob(x + dx * s, y + dy * s, r * s, r * s * 0.85, 22, 0.2), c, 0.5, t0 + 0.5 + i * 0.25, t0 + 1.3 + i * 0.25, 'r')));
+}
+tree(1250, 705, 1.0, 4.6); tree(1470, 690, 0.8, 5.0); tree(540, 690, 0.85, 4.3); tree(1760, 676, 0.6, 5.2);
+// campo
+add(BG, wash([[-300, 700], [2800, 700], [2800, 1250], [-300, 1250]], '#c9c27f', 0.5, 3.0, 5.4, 'y'));
+for (let i = 0; i < 3; i++) add(BG, wash(blob(rnd(-100, 2500), rnd(790, 1000), rnd(240, 420), rnd(60, 110), 24, 0.25), i === 1 ? '#8ea860' : '#a9b86e', 0.35, 3.6 + i * 0.4, 5.8 + i * 0.4, 'r'));
+for (let i = 0; i < 260; i++) {
+  const x = rnd(-200, 2500), y = rnd(715, 1120), h = rnd(26, 62) * (0.6 + (y - 700) / 600), bend = rnd(-16, 16);
+  const t0 = 3.2 + ss((x + 200) / 2700) * 2.2 + rnd(0, 0.6);
+  add(BG, mk([[x, y], [x + bend * 0.4, y - h * 0.5], [x + bend, y - h]], rnd(5, 9), ['#6f8f4e', '#8ea860', '#5f7f50', '#a3b36a'][i % 4], 0.5, 'tip', t0, t0 + 0.5, { nb: 1, rough: 0.3 }));
+}
+// problemas (tempestade, chuva, pedras, nota)
+[[300, 190, 190, 80, 0.3], [470, 150, 170, 70, 0.45], [610, 215, 150, 62, 0.6], [200, 245, 150, 52, 0.7], [420, 255, 200, 60, 0.85], [560, 120, 120, 48, 0.55]].forEach(([cx, cy, rx, ry, t0]) =>
+  add(PROB, wash(blob(cx, cy, rx, ry, 30, 0.22), '#46525e', 0.34, t0, t0 + 1.4, 'r')));
+for (let i = 0; i < 70; i++) { const x = rnd(150, 700), y = rnd(280, 380), t0 = 1.0 + rnd(0, 1.5); add(PROB, mk([[x, y], [x - 9, y + 70], [x - 18, y + rnd(110, 250)]], 3.2, '#4a5866', 0.45, 'tip', t0, t0 + 0.5, { nb: 0, rough: 0.1 })); }
+[[300, 690, 70, 44], [420, 705, 55, 34], [560, 690, 82, 50], [660, 715, 48, 30], [220, 710, 52, 32]].forEach(([cx, cy, rx, ry], i) => {
+  add(PROB, wash(blob(cx, cy, rx, ry, 22, 0.16), '#6b6258', 0.55, 1.2 + i * 0.15, 2.4 + i * 0.15, 'r'));
+  add(PROB, wash(blob(cx + rx * 0.1, cy + ry * 0.25, rx * 0.8, ry * 0.5, 18, 0.1), '#3f3a36', 0.3, 1.4 + i * 0.15, 2.6 + i * 0.15, 'r'));
+  add(PROB, mk(blob(cx, cy, rx, ry, 14, 0.1).slice(8, 14).concat([[cx - rx, cy]]), 4, '#3f3a36', 0.5, 'brush', 1.6 + i * 0.15, 2.6 + i * 0.15, { nb: 1 }));
+});
+NOTES.push({ text: 'o que eu não resolvo', x: 90, y: 110, size: 46, t0: 3.0, t1: 5.0, layer: 'prob', lead: mk([[390, 130], [380, 170], [350, 205]], 3, INK, 0.7, 'even', 4.6, 5.2, { nb: 0, rough: 0.05 }) });
+// figura (coordenadas locais, pés em 0,0)
+{
+  const f = (arr, o) => add(FIG, o);
+  f(0, wash(blob(0, 4, 46, 11, 18, 0.1), '#3f3a36', 0.18, 4.0, 4.6, 'r'));
+  f(0, wash([[-36, 0], [36, 0], [20, -94], [-20, -94]], '#5f7486', 0.5, 4.1, 5.2, 'y'));
+  [-24, -12, 0, 12, 24].forEach((dx, i) => f(0, mk([[dx * 0.5, -92], [dx * 0.9, -45], [dx, 0]], 14, ['#5f7486', '#4a6070', '#6f8496', '#53697a', '#5f7486'][i], 0.5, 'brush', 4.1 + i * 0.12, 4.9 + i * 0.12, { nb: 2 })));
+  f(0, mk([[-19, -88], [-32, -55], [-28, -30]], 9, '#4a6070', 0.55, 'brush', 4.9, 5.3, { nb: 1 }));
+  f(0, mk([[19, -88], [30, -55], [24, -34]], 9, '#4a6070', 0.55, 'brush', 5.0, 5.4, { nb: 1 }));
+  f(0, mk([[0, -94], [0, -104]], 12, '#d9b08c', 0.7, 'flat', 5.2, 5.4, { nb: 0 }));
+  f(0, wash(blob(0, -118, 19, 21, 18, 0.06), '#e0b894', 0.65, 5.3, 5.8, 'r'));
+  f(0, mk([[-40, -130], [0, -138], [40, -130]], 11, '#c9a56a', 0.85, 'even', 5.7, 6.1, { nb: 2 }));
+  f(0, wash(blob(0, -138, 20, 14, 14, 0.06), '#b8924f', 0.7, 5.8, 6.2, 'r'));
+}
+// círculo de alcance + flores
+const CX = 900, CY = 790, RX = 300, RY = 105;
+const ring = mk(Array.from({ length: 14 }, (_, i) => { const a = -1.7 + i / 13 * 6.45; return [CX + Math.cos(a) * RX, CY + Math.sin(a) * RY]; }), 9, ACC, 0.78, 'even', 9.6, 11.5, { nb: 3, step: 8 });
+const ringWash = wash(blob(CX, CY, RX, RY, 36, 0.02), '#e08a63', 0.12, 10.6, 12.2, 'r');
+function flower(x, y, col, t0) {
+  const h = rnd(60, 110), lean = rnd(-14, 14), top = [x + lean, y - h];
+  add(FLOWERS, { y, parts: [
+    mk([[x, y], [x + lean * 0.3, y - h * 0.5], top], 5, '#5f7f50', 0.8, 'tip', t0, t0 + 0.9, { nb: 0, rough: 0.1 }),
+    mk([[x + lean * 0.2, y - h * 0.35], [x - 22, y - h * 0.55], [x - 26, y - h * 0.5]], 9, '#7f9a62', 0.7, 'leaf', t0 + 0.5, t0 + 1.1, { nb: 1 }),
+    mk([[x + lean * 0.3, y - h * 0.5], [x + 22, y - h * 0.68], [x + 28, y - h * 0.62]], 9, '#6f8f4e', 0.7, 'leaf', t0 + 0.6, t0 + 1.2, { nb: 1 }),
+    ...Array.from({ length: 5 }, (_, k) => { const a = k / 5 * 6.28 + 0.3; return mk([[top[0], top[1]], [top[0] + Math.cos(a) * 10, top[1] + Math.sin(a) * 10], [top[0] + Math.cos(a) * 22, top[1] + Math.sin(a) * 22]], 13, col, 0.65, 'leaf', t0 + 0.9 + k * 0.07, t0 + 1.5 + k * 0.07, { nb: 0, rough: 0.12 }); }),
+    mk([[top[0] - 2, top[1]], [top[0] + 2, top[1]]], 9, '#d9a040', 0.9, 'flat', t0 + 1.4, t0 + 1.6, { nb: 0 }),
+  ] });
+}
+{
+  const cols = ['#e3b341', '#8b6aa7', '#5b86b8', '#d98a93', '#e3b341', '#d98a93'];
+  let k = 0, tries = 0;
+  while (k < 17 && tries++ < 200) {
+    const a = rnd(0, 6.28), r = Math.sqrt(rnd(0.06, 0.9)), x = CX + Math.cos(a) * RX * 0.92 * r, y = CY + Math.sin(a) * RY * 0.9 * r;
+    if (Math.abs(x - CX) < 85 && y < CY + 30) continue;
+    flower(x, y, cols[k % cols.length], 11.5 + k * 0.28 + rnd(0, 0.2)); k++;
+  }
+}
+NOTES.push({ text: 'ao seu alcance', x: 380, y: 570, size: 54, t0: 12.4, t1: 13.8, fade: [17.2, 18.1], lead: mk([[610, 590], [640, 650], [640, 735]], 3.5, INK, 0.7, 'even', 13.6, 14.4, { nb: 0, rough: 0.05 }) });
+// caminho, sol, pássaros
+const PATH = mk([[880, 820], [1250, 748], [1650, 692], [2040, 654]], 0, '#d8bd8a', 0.75, 'flat', 19.6, 22.0, { wf: u => lerp(120, 12, Math.pow(u, 0.8)) * Math.pow(Math.min(1, u * 14), 0.5), nb: 4, step: 8, rough: 0.12 });
+const PATH_E = [[0, '#8a7048'], [0, '#8a7048']].map((_, i) => mk(PATH.pts.filter((_, j) => j % 10 === 0).map((p, j, a) => { const u = j / (a.length - 1), q = PATH.pts.indexOf(PATH.pts.filter((_, jj) => jj % 10 === 0)[j]), ww = lerp(120, 12, Math.pow(u, 0.8)) / 2; return [p[0], p[1] + (i ? ww : -ww) * 0.9]; }), 4, '#8a7048', 0.4, 'brush', 19.8, 22.1, { nb: 0, step: 10 }));
+const SUN = { x: 2060, y: 505 };
+const SUNW = [wash(blob(SUN.x, SUN.y, 235, 215, 36, 0.05), '#f2b47c', 0.22, 22.8, 25.0, 'r'), wash(blob(SUN.x, SUN.y, 86, 86, 30, 0.03), '#d9532e', 0.5, 22.6, 24.4, 'r')];
+const RAYS = Array.from({ length: 13 }, (_, i) => {
+  const a = -3.0 + i / 12 * 2.86, r0 = 108, r1 = 108 + rnd(34, 62), last = i === 12;
+  return mk([[SUN.x + Math.cos(a) * r0, SUN.y + Math.sin(a) * r0], [SUN.x + Math.cos(a) * (r0 + r1) / 2, SUN.y + Math.sin(a) * (r0 + r1) / 2], [SUN.x + Math.cos(a) * r1, SUN.y + Math.sin(a) * r1]], 8, ACC, 0.7, 'tip', 24.0 + i * 0.08, last ? 27.6 : 24.6 + i * 0.08, { nb: 1, cap: last ? 0.62 : 1 });
+});
+const BIRDS = [[1730, 330], [1800, 285], [1680, 270]].flatMap(([x, y], i) => [
+  mk([[x - 22, y - 6], [x - 10, y - 14], [x, y]], 4, INK, 0.6, 'tip', 24.6 + i * 0.25, 25.0 + i * 0.25, { nb: 0, rough: 0.05 }),
+  mk([[x, y], [x + 10, y - 14], [x + 22, y - 6]], 4, INK, 0.6, 'tip', 24.8 + i * 0.25, 25.2 + i * 0.25, { nb: 0, rough: 0.05 })]);
+NOTES.push({ text: 'mais feliz', x: 1560, y: 440, size: 58, t0: 24.3, t1: 25.7, lead: mk([[1760, 455], [1810, 470], [1850, 480]], 3.5, INK, 0.7, 'even', 25.4, 26.0, { nb: 0, rough: 0.05 }) });
+
+// eventos de som
+window.EV = [
+  { t: 0.4, type: 'brush', dur: 1.8, gain: 1.0, pan: -0.5 }, { t: 1.2, type: 'brush', dur: 1.4, gain: 0.8, pan: -0.3 },
+  { t: 1.3, type: 'brush', dur: 2.2, gain: 0.7, pan: 0 }, { t: 2.6, type: 'brush', dur: 2.4, gain: 0.6, pan: 0.2 },
+  { t: 3.4, type: 'brush', dur: 3.0, gain: 0.5, pan: 0 }, { t: 4.0, type: 'brush', dur: 2.4, gain: 0.8, pan: 0.1 },
+  { t: 3.0, type: 'note', dur: 2.0 }, { t: 7.0, type: 'mist', dur: 2.4 },
+  { t: 9.6, type: 'brush', dur: 2.0, gain: 1.0, pan: 0 }, { t: 11.5, type: 'brush', dur: 5.0, gain: 0.5, pan: 0.1 },
+  { t: 12.4, type: 'note', dur: 1.4 }, { t: 17.7, type: 'ring', dur: 1.4 },
+  { t: 19.6, type: 'brush', dur: 2.4, gain: 1.0, pan: 0.2 }, { t: 22.6, type: 'brush', dur: 2.2, gain: 0.9, pan: 0.6 },
+  { t: 24.0, type: 'brush', dur: 1.2, gain: 0.6, pan: 0.4 }, { t: 24.3, type: 'note', dur: 1.4 },
+];
+
+// ---------- câmera ----------
+const KEYS = [[0, 960, 540, 1.0], [8.3, 960, 540, 1.0], [10.8, 930, 665, 1.5], [17.4, 900, 680, 1.58], [19.8, 1150, 580, 1.15], [26.6, 1560, 545, 1.0]];
+function cam(t) {
+  for (let i = 0; i < KEYS.length - 1; i++) { const a = KEYS[i], b = KEYS[i + 1]; if (t <= b[0]) { const u = ss((t - a[0]) / (b[0] - a[0])); return { cx: lerp(a[1], b[1], u), cy: lerp(a[2], b[2], u), z: lerp(a[3], b[3], u) }; } }
+  const k = KEYS[KEYS.length - 1]; return { cx: k[1], cy: k[2], z: k[3] };
+}
+const setCam = (ctx, c) => ctx.setTransform(c.z * S, 0, 0, c.z * S, W / 2 - c.cx * c.z * S, H / 2 - c.cy * c.z * S);
+
+// ---------- papel ----------
+const paper = document.createElement('canvas'); paper.width = W; paper.height = H;
+function makePaper() {
+  const p = paper.getContext('2d'); p.fillStyle = PAPER; p.fillRect(0, 0, W, H);
+  for (const [w, h, a] of [[24, 14, 0.07], [72, 40, 0.045], [180, 100, 0.025]]) {
+    const c = document.createElement('canvas'); c.width = w; c.height = h; const cc = c.getContext('2d'), id = cc.createImageData(w, h);
+    for (let i = 0; i < w * h; i++) { id.data[i * 4] = 140; id.data[i * 4 + 1] = 105; id.data[i * 4 + 2] = 60; id.data[i * 4 + 3] = R() * a * 255; }
+    cc.putImageData(id, 0, 0); p.imageSmoothingEnabled = true; p.drawImage(c, 0, 0, W, H);
+  }
+  p.lineWidth = 0.7;
+  for (let i = 0; i < 2600; i++) { const x = rnd(0, W), y = rnd(0, H), a = rnd(0, 6.28), l = rnd(8, 26); p.strokeStyle = `rgba(150,120,80,${rnd(0.05, 0.12)})`; p.beginPath(); p.moveTo(x, y); p.quadraticCurveTo(x + Math.cos(a) * l / 2 + rnd(-4, 4), y + Math.sin(a) * l / 2 + rnd(-4, 4), x + Math.cos(a) * l, y + Math.sin(a) * l); p.stroke(); }
+  const gt = document.createElement('canvas'); gt.width = gt.height = 256; const gc = gt.getContext('2d'), gi = gc.createImageData(256, 256);
+  for (let i = 0; i < 65536; i++) { const v = R() < 0.5 ? 90 : 255; gi.data[i * 4] = v; gi.data[i * 4 + 1] = v * 0.9; gi.data[i * 4 + 2] = v * 0.75; gi.data[i * 4 + 3] = R() * 14; }
+  gc.putImageData(gi, 0, 0); p.fillStyle = p.createPattern(gt, 'repeat'); p.fillRect(0, 0, W, H);
+  const v = p.createRadialGradient(W / 2, H / 2, H * 0.45, W / 2, H / 2, H * 1.0); v.addColorStop(0, 'rgba(120,90,50,0)'); v.addColorStop(1, 'rgba(120,90,50,0.13)');
+  p.fillStyle = v; p.fillRect(0, 0, W, H);
+}
+
+// ---------- notas à mão ----------
+function drawNote(n, t) {
+  let a = 1; if (n.fade) a = 1 - ss((t - n.fade[0]) / (n.fade[1] - n.fade[0]));
+  const p = ss((t - n.t0) / (n.t1 - n.t0)); if (p <= 0 || a <= 0) return;
+  g.save(); g.globalAlpha = a; g.font = `600 ${n.size}px Caveat, cursive`; g.textBaseline = 'alphabetic'; g.lineJoin = 'round';
+  const w = g.measureText(n.text).width; g.beginPath(); g.rect(n.x - 10, n.y - n.size, (w + 20) * p, n.size * 1.5); g.clip();
+  g.strokeStyle = 'rgba(244,235,216,0.9)'; g.lineWidth = 11; g.strokeText(n.text, n.x, n.y);
+  g.fillStyle = 'rgba(74,58,44,0.88)'; g.fillText(n.text, n.x, n.y); g.restore();
+  g.save(); g.globalAlpha = a; drawS(n.lead, t); g.restore();
+}
+
+// ---------- legendas ----------
+const CUES = [
+  [1.6, 5.7, 'Viver uma vida simples é muito mais fácil'],
+  [5.1, 10.4, 'se você souber esquecer os problemas que você não pode resolver'],
+  [10.45, 17.2, 'e também viver somente aquilo que você é capaz de poder resolver'],
+  [17.55, 19.5, 'aquilo que está ao seu redor,'],
+  [19.6, 22.05, 'simples e direto,'],
+  [22.15, 25.3, 'faça e você será mais feliz.'],
+];
+window.CUES = CUES;
+function lines(txt) { const w = txt.split(' '); if (txt.length < 36) return [txt]; let best = 0, bd = 1e9; for (let i = 1; i < w.length; i++) { const d = Math.abs(w.slice(0, i).join(' ').length - w.slice(i).join(' ').length); if (d < bd) { bd = d; best = i; } } return [w.slice(0, best).join(' '), w.slice(best).join(' ')]; }
+function drawSubs(t) {
+  for (const [a, b, txt] of CUES) {
+    if (t < a || t > b) continue;
+    const al = Math.min(ss((t - a) / 0.3), 1 - ss((t - (b - 0.3)) / 0.3)), L = lines(txt);
+    g.save(); g.globalAlpha = al; g.font = `italic 500 ${Math.round(42 * S)}px "Cormorant Garamond", serif`; g.textAlign = 'center'; g.lineJoin = 'round';
+    L.forEach((s, i) => { const y = H - (L.length - i) * 54 * S - 40 * S + 20 * S; g.strokeStyle = 'rgba(244,235,216,0.93)'; g.lineWidth = 11 * S; g.strokeText(s, W / 2, y); g.fillStyle = 'rgba(60,45,34,0.82)'; g.fillText(s, W / 2, y); });
+    g.restore();
+  }
+  if (t < 3.9) { const al = Math.min(ss((t - 0.5) / 0.9), 1 - ss((t - 3.0) / 0.9)); if (al > 0) { g.save(); g.globalAlpha = al; g.font = `italic 500 ${Math.round(104 * S)}px "Cormorant Garamond", serif`; g.textAlign = 'center'; g.fillStyle = 'rgba(60,45,34,0.8)'; g.fillText('Vida feliz', W * 0.68, 190 * S); g.restore(); } }
+}
+
+// ---------- quadro ----------
+const edgeX = t => lerp(820, -170, ss((t - 7.0) / 2.3));
+function render(t) {
+  g = main; g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.drawImage(paper, 0, 0);
+  const c = cam(t); setCam(g, c);
+  BG.forEach(o => (o.passes ? drawW(o, t) : drawS(o, t)));
+  // problemas, na camada própria (a névoa apaga só eles)
+  if (t < 9.6) {
+    plg.setTransform(1, 0, 0, 1, 0, 0); plg.clearRect(0, 0, W, H); g = plg; setCam(g, c);
+    PROB.forEach(o => (o.passes ? drawW(o, t) : drawS(o, t))); NOTES.filter(n => n.layer === 'prob').forEach(n => drawNote(n, t));
+    if (t > 7.0) {
+      const ex = edgeX(t); g.globalCompositeOperation = 'destination-out';
+      g.beginPath(); g.moveTo(3200, -200); g.lineTo(ex + 30, -200);
+      for (let y = -200; y <= 1300; y += 30) g.lineTo(ex + 36 * Math.sin(y * 0.014 + t * 2) + 14 * Math.sin(y * 0.05), y);
+      g.lineTo(ex + 30, 1300); g.lineTo(3200, 1300); g.closePath(); g.fillStyle = '#000'; g.fill();
+      const gr = g.createLinearGradient(ex - 110, 0, ex, 0); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,1)'); g.fillStyle = gr; g.fillRect(ex - 110, -200, 150, 1500);
+      g.globalCompositeOperation = 'source-over';
+    }
+    g = main; main.setTransform(1, 0, 0, 1, 0, 0); main.drawImage(PL, 0, 0); setCam(main, c);
+    if (t > 7.0 && t < 9.6) { const ex = edgeX(t), gr = g.createLinearGradient(ex - 330, 0, ex + 120, 0); gr.addColorStop(0, 'rgba(244,235,216,0)'); gr.addColorStop(0.7, 'rgba(244,235,216,0.55)'); gr.addColorStop(1, 'rgba(244,235,216,0)'); g.fillStyle = gr; g.fillRect(ex - 330, -200, 450, 1500); }
+  }
+  // alcance
+  const ringA = 1 - 0.65 * ss((t - 19.6) / 1.4);
+  drawW(ringWash, t, ringA); drawS(ring, t, ringA);
+  if (t > 17.7 && t < 19.2) { const u = ss((t - 17.7) / 1.4); g.save(); g.beginPath(); g.ellipse(CX, CY, RX * (1 + 0.28 * u), RY * (1 + 0.28 * u), 0, 0, 7); g.lineWidth = 7; g.strokeStyle = `rgba(200,68,42,${0.55 * (1 - u)})`; g.stroke(); g.restore(); }
+  // caminho
+  drawS(PATH, t); PATH_E.forEach(s => drawS(s, t));
+  // flores (atrás e na frente da figura) e figura
+  const fq = ss((t - 22.2) / 3.0) * 0.78, pi = clamp(Math.round(fq * (PATH.n - 1)), 0, PATH.n - 1), pp = PATH.pts[pi];
+  const fx = t < 22.2 ? 900 : pp[0], fy = t < 22.2 ? 790 : pp[1], fs = t < 22.2 ? 1.6 : lerp(1.6, 0.85, fq / 0.78);
+  const bob = t > 22.2 && t < 25.3 ? Math.abs(Math.sin((t - 22.2) * 7)) * -5 * fs : 0;
+  FLOWERS.filter(f => f.y < 790).forEach(f => f.parts.forEach(s => drawS(s, t)));
+  g.save(); g.translate(fx, fy + bob); g.scale(fs, fs); FIG.forEach(o => (o.passes ? drawW(o, t) : drawS(o, t))); g.restore();
+  FLOWERS.filter(f => f.y >= 790).forEach(f => f.parts.forEach(s => drawS(s, t)));
+  // sol, raios, pássaros
+  SUNW.forEach(w => drawW(w, t)); RAYS.forEach(s => drawS(s, t)); BIRDS.forEach(s => drawS(s, t));
+  NOTES.filter(n => n.layer !== 'prob').forEach(n => drawNote(n, t));
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; drawSubs(t);
+}
+window.render = render;
+
+(async () => {
+  try {
+    const fonts = [new FontFace('Caveat', 'url(fonts/Caveat.woff2)', { weight: '600' }), new FontFace('Cormorant Garamond', 'url(fonts/CormorantItalic.woff2)', { weight: '500', style: 'italic' })];
+    for (const f of fonts) { await f.load(); document.fonts.add(f); }
+  } catch (e) { console.error('[font]', e); }
+  makePaper(); render(0); window.READY = true;
+})();
+</script></body></html>

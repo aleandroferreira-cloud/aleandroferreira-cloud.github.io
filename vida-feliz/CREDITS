@@ -1,0 +1,9 @@
+Vida feliz — créditos de terceiros
+
+- Voz: gravação do próprio autor (Vida_feliz.m4a), usada como enviada.
+- Estilo Watercolor Brush: gramática do estilo da biblioteca lemo-opuscar (MIT), https://github.com/lemomo-ai/lemo-opuscar. Todo o código de desenho, trilha e foley deste filme foi escrito do zero para este vídeo.
+- Fontes (SIL Open Font License 1.1): Caveat e Cormorant Garamond, via pacotes @fontsource (licenças em fonts/).
+- Transcrição e tempos de palavra: faster-whisper (MIT), modelo Whisper "small" (MIT, OpenAI).
+- Ferramentas de renderização e mixagem: Playwright/Chromium, FFmpeg (GPL, binário BtbN), numpy/scipy.
+- Música: sintetizada em código (pad e kalimba), sem amostras de terceiros.
+- Você é responsável pelos materiais que usar no filme.
