@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Vida feliz — quadro-negro</title>
+<style>html,body{margin:0;background:#e9e1cf;overflow:hidden}canvas{display:block}</style></head>
+<body><canvas id="c"></canvas>
+<script>
+const W = innerWidth, H = innerHeight, S = W / 1080;
+const cv = document.getElementById('c'); cv.width = W; cv.height = H; const main = cv.getContext('2d');
+const mkc = () => { const c = document.createElement('canvas'); c.width = W; c.height = H; return c; };
+const LP = mkc(), LC = mkc(), lp = LP.getContext('2d'), lc = LC.getContext('2d');
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, t) => a + (b - a) * t, ss = t => { t = clamp(t); return t * t * (3 - 2 * t); };
+function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const R = mulberry(77031103), rnd = (a = 0, b = 1) => a + (b - a) * R();
+const NT = new Float32Array(256); for (let i = 0; i < 256; i++) NT[i] = R() * 2 - 1;
+const vn = x => { const i = Math.floor(x), f = x - i, a = NT[i & 255], b = NT[(i + 1) & 255], u = f * f * (3 - 2 * f); return a + (b - a) * u; };
+window.DUR = 26.6;
+const WHITE = '#f2f0e6', ACC = '#f08a3c', PALE = '#f3df8a';
+
+function catmull(c, step = 5) {
+  const out = [], P = [c[0], ...c, c[c.length - 1]];
+  for (let i = 1; i < P.length - 2; i++) {
+    const p0 = P[i - 1], p1 = P[i], p2 = P[i + 1], p3 = P[i + 2], n = Math.max(2, Math.ceil(Math.hypot(p2[0] - p1[0], p2[1] - p1[1]) / step));
+    for (let k = 0; k < n; k++) { const t = k / n, t2 = t * t, t3 = t2 * t, f = (a, b, c2, d) => 0.5 * ((2 * b) + (-a + c2) * t + (2 * a - 5 * b + 4 * c2 - d) * t2 + (-a + 3 * b - 3 * c2 + d) * t3); out.push([f(p0[0], p1[0], p2[0], p3[0]), f(p0[1], p1[1], p2[1], p3[1])]); }
+  }
+  out.push(c[c.length - 1]); return out;
+}
+// itens: traços e textos com tempo
+const P = [], C = [], EV = [];
+function stroke(arr, ctrl, w, col, t0, t1, o = {}) {
+  const pts = o.raw ? ctrl : catmull(ctrl, 5), seed = rnd(0, 200), n = pts.length; let len = 0;
+  const wd = pts.map((_, i) => w * (0.82 + 0.28 * vn(seed + i * 0.3)) * (o.taper ? Math.min(1, 0.55 + 6 * Math.min(i, n - 1 - i) / n) : 1));
+  for (let i = 1; i < n; i++) len += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+  const s = { k: 's', pts, wd, col, t0, t1, n }; arr.push(s); EV.push({ t: t0, type: 'chalk', d: t1 - t0, len, big: w > 9 ? 1 : 0, acc: col === ACC ? 1 : 0 }); return s;
+}
+function text(arr, str, x, y, size, col, t0, t1, rot = 0, align = 'left') {
+  const s = { k: 't', str, x, y, size, col, t0, t1, rot, align }; arr.push(s); EV.push({ t: t0, type: 'chalk', d: t1 - t0, len: str.length * size * 0.3, big: size > 100 ? 1 : 0, acc: col === ACC ? 1 : 0 }); return s;
+}
+const loop = (cx, cy, rx, ry, a0, a1, n = 18) => Array.from({ length: n }, (_, i) => { const a = lerp(a0, a1, i / (n - 1)), k = 1 + 0.025 * Math.sin(a * 3 + 1); return [cx + Math.cos(a) * rx * k, cy + Math.sin(a) * ry * k]; });
+
+// --- problemas (rabiscos e palavras), camada apagável ---
+const WORDS = [['contas', 250, 270, -0.08, 66], ['e se…?', 640, 240, 0.06, 70], ['medo', 300, 420, 0.05, 62], ['trânsito', 600, 400, -0.05, 60], ['opinião dos outros', 200, 540, 0.03, 50], ['prazo', 700, 560, -0.06, 64]];
+WORDS.forEach(([w, x, y, r, sz], i) => {
+  const t0 = 0.5 + i * 0.5; text(P, w, x, y, sz, WHITE, t0, t0 + 0.6, r);
+  const cx = x + 60, cy = y - 30, pts = []; let px = cx, py = cy;
+  for (let k = 0; k < 22; k++) { const a = k * 1.1 + i; px = cx + Math.cos(a) * (40 + k * 5) + rnd(-12, 12); py = cy + Math.sin(a * 1.3) * (22 + k * 3) + rnd(-10, 10); pts.push([px, py]); }
+  stroke(P, pts, 4.5, WHITE, t0 + 0.55, t0 + 1.4, { taper: 1 });
+});
+// --- apagador: um passe só ---
+const WIPE = { t0: 7.1, t1: 8.9, w: 250, pts: catmull([[960, 230], [160, 300], [960, 430], [160, 520], [960, 640]], 8) };
+EV.push({ t: 7.1, type: 'wipe', d: 1.8 });
+// --- círculo de alcance (laranja), no mesmo lugar ---
+const CX = 540, CY = 470;
+stroke(C, loop(CX, CY, 330, 215, -2.2, 4.35, 26), 11, ACC, 9.5, 11.6);
+text(C, 'o que eu resolvo', CX, 228, 58, WHITE, 10.8, 12.2, 0, 'center');
+// boneco
+stroke(C, loop(CX, CY - 15, 28, 28, -1.6, 4.8, 16), 8, WHITE, 11.3, 11.8);
+stroke(C, [[CX, CY + 15], [CX, CY + 95]], 8, WHITE, 11.8, 12.2, { raw: 0 });
+stroke(C, [[CX - 55, CY + 35], [CX, CY + 48], [CX + 55, CY + 35]], 8, WHITE, 12.2, 12.6);
+stroke(C, [[CX, CY + 95], [CX - 38, CY + 160]], 8, WHITE, 12.6, 12.9);
+stroke(C, [[CX, CY + 95], [CX + 38, CY + 160]], 8, WHITE, 12.9, 13.2);
+// flores
+[[CX - 190, CY + 130, 13.4], [CX + 175, CY + 150, 14.6], [CX - 120, CY + 60, 15.5], [CX + 120, CY + 70, 16.0]].forEach(([x, y, t0]) => {
+  stroke(C, [[x, y], [x + 4, y - 40], [x - 2, y - 80]], 6, WHITE, t0, t0 + 0.5);
+  for (let k = 0; k < 5; k++) { const a = k / 5 * 6.2832 - 1.57; stroke(C, loop(x + Math.cos(a) * 19, y - 98 + Math.sin(a) * 19, 12, 12, 0, 6.4, 9), 5, WHITE, t0 + 0.5 + k * 0.08, t0 + 0.7 + k * 0.08); }
+  stroke(C, loop(x, y - 98, 6, 6, 0, 6.4, 7), 5, WHITE, t0 + 0.95, t0 + 1.05);
+  stroke(C, [[x - 4, y - 45], [x - 28, y - 62]], 5, WHITE, t0 + 0.4, t0 + 0.65);
+});
+// anel "ao seu redor" (amarelo pálido, tracejado)
+for (let i = 0; i < 22; i++) { const a0 = i / 22 * 6.2832 - 1.2, t0 = 17.7 + i * 0.07; stroke(C, loop(CX, CY, 425, 310, a0, a0 + 0.2, 4), 6, PALE, t0, t0 + 0.09); }
+text(C, 'ao seu redor', CX, 855, 58, PALE, 18.6, 19.5, 0, 'center');
+// seta reta, "simples e direto"
+stroke(C, [[CX, 900], [CX, 1190]], 10, ACC, 19.6, 21.3, { raw: 1 });
+stroke(C, [[CX - 38, 1140], [CX, 1195]], 10, ACC, 21.3, 21.55, { raw: 1 });
+stroke(C, [[CX + 38, 1140], [CX, 1195]], 10, ACC, 21.55, 21.8, { raw: 1 });
+text(C, 'simples e direto', 585, 1030, 58, WHITE, 20.0, 21.6);
+// faça + sorriso
+text(C, 'faça', 260, 1330, 150, WHITE, 22.2, 23.0, -0.03, 'left');
+stroke(C, [[190, 1362], [330, 1356], [455, 1362]], 10, ACC, 23.0, 23.5, { raw: 1 });
+stroke(C, loop(790, 1280, 80, 80, -1.7, 4.6, 22), 10, ACC, 23.6, 24.3);
+stroke(C, loop(760, 1260, 7, 7, 0, 6.4, 8), 7, ACC, 24.3, 24.45);
+stroke(C, loop(820, 1260, 7, 7, 0, 6.4, 8), 7, ACC, 24.45, 24.6);
+stroke(C, loop(790, 1285, 42, 30, 0.3, 2.84, 10), 8, ACC, 24.6, 25.1);
+text(C, 'mais feliz', 790, 1425, 62, WHITE, 24.9, 25.8, 0, 'center');
+window.EV = EV.sort((a, b) => a.t - b.t).concat([{ t: 7.1, type: 'wipe', d: 1.8 }].slice(0, 0));
+
+// --- sala (assada uma vez, em 2×) ---
+const ROOM = document.createElement('canvas'); ROOM.width = 2160; ROOM.height = 3840;
+function bake() {
+  const r = ROOM.getContext('2d'); r.scale(2, 2);
+  r.fillStyle = '#e9e1cf'; r.fillRect(0, 0, 1080, 1920);
+  r.fillStyle = '#5f7f78'; r.fillRect(0, 1660, 1080, 260); r.fillStyle = '#4b6862'; r.fillRect(0, 1654, 1080, 8);
+  for (let i = 0; i < 1400; i++) { r.fillStyle = `rgba(150,130,100,${rnd(0.02, 0.05)})`; r.fillRect(rnd(0, 1080), rnd(0, 1650), rnd(2, 8), rnd(1, 3)); }
+  // moldura
+  const wg = r.createLinearGradient(0, 100, 0, 1570); wg.addColorStop(0, '#9a6a3e'); wg.addColorStop(1, '#7b4f2b');
+  r.fillStyle = '#00000022'; r.fillRect(66, 112, 966, 1470); r.fillStyle = wg; r.fillRect(56, 98, 968, 1470);
+  for (let i = 0; i < 260; i++) { r.strokeStyle = `rgba(60,35,15,${rnd(0.05, 0.14)})`; r.lineWidth = rnd(0.5, 1.6); const y = rnd(98, 1568); r.beginPath(); r.moveTo(56, y); r.lineTo(1024, y + rnd(-3, 3)); r.stroke(); }
+  // ardósia
+  r.fillStyle = '#26392f'; r.fillRect(92, 134, 896, 1366);
+  for (const [w, h, a] of [[14, 24, 0.18], [40, 70, 0.1], [120, 200, 0.05]]) {
+    const c = document.createElement('canvas'); c.width = w; c.height = h; const cc = c.getContext('2d'), id = cc.createImageData(w, h);
+    for (let i = 0; i < w * h; i++) { const v = R() < 0.5 ? 10 : 90; id.data[i * 4] = v * 0.6; id.data[i * 4 + 1] = v; id.data[i * 4 + 2] = v * 0.75; id.data[i * 4 + 3] = R() * a * 255; }
+    cc.putImageData(id, 0, 0); r.imageSmoothingEnabled = true; r.drawImage(c, 92, 134, 896, 1366);
+  }
+  for (let i = 0; i < 9000; i++) { r.fillStyle = `rgba(200,225,210,${rnd(0.01, 0.05)})`; r.fillRect(rnd(92, 988), rnd(134, 1500), rnd(0.6, 1.6), rnd(0.6, 1.6)); }
+  r.strokeStyle = 'rgba(0,0,0,0.35)'; r.lineWidth = 6; r.strokeRect(92, 134, 896, 1366);
+  // bandeja
+  r.fillStyle = '#6b4424'; r.fillRect(44, 1500, 992, 70); r.fillStyle = '#8a5a34'; r.fillRect(44, 1500, 992, 12); r.fillStyle = '#00000030'; r.fillRect(44, 1566, 992, 8);
+  [['#f2f0e6', 150], ['#f08a3c', 230], ['#f3df8a', 300]].forEach(([c, x]) => { r.fillStyle = c; r.fillRect(x, 1518, 62, 15); r.fillStyle = 'rgba(0,0,0,0.15)'; r.fillRect(x, 1529, 62, 4); });
+  r.fillStyle = '#3d3a36'; r.fillRect(780, 1508, 130, 38); r.fillStyle = '#d8d0b8'; r.fillRect(780, 1508, 130, 12);
+  // relógio
+  r.fillStyle = '#f6f2e6'; r.beginPath(); r.arc(880, 56, 38, 0, 7); r.fill(); r.strokeStyle = '#3a2a1c'; r.lineWidth = 5; r.stroke();
+  r.lineCap = 'round'; r.lineWidth = 4; r.beginPath(); r.moveTo(880, 56); r.lineTo(880 - 10, 56 - 20); r.stroke(); r.lineWidth = 3; r.beginPath(); r.moveTo(880, 56); r.lineTo(880 + 22, 56 - 8); r.stroke();
+  // luz
+  const lg = r.createLinearGradient(0, 0, 1080, 0); lg.addColorStop(0, 'rgba(255,240,200,0.10)'); lg.addColorStop(1, 'rgba(0,0,0,0.12)'); r.fillStyle = lg; r.fillRect(0, 0, 1080, 1920);
+}
+const TILE = document.createElement('canvas'); TILE.width = TILE.height = 256;
+function makeTile() { const t = TILE.getContext('2d'), id = t.createImageData(256, 256); for (let i = 0; i < 65536; i++) { id.data[i * 4] = id.data[i * 4 + 1] = id.data[i * 4 + 2] = 255; id.data[i * 4 + 3] = R() < 0.62 ? 150 + R() * 105 : R() * 60; } t.putImageData(id, 0, 0); }
+
+// --- câmera ---
+const KEYS = [[0, 540, 960, 1.0], [1.6, 540, 960, 1.0], [3.0, 540, 880, 1.3], [8.0, 540, 560, 1.45], [10.5, 540, 520, 1.45], [17.4, 540, 540, 1.38], [19.8, 540, 760, 1.3], [22.4, 540, 1100, 1.3], [25.0, 540, 1100, 1.3], [26.6, 540, 960, 1.0]];
+function cam(t) { for (let i = 0; i < KEYS.length - 1; i++) { const a = KEYS[i], b = KEYS[i + 1]; if (t <= b[0]) { const u = ss((t - a[0]) / (b[0] - a[0])); return { cx: lerp(a[1], b[1], u), cy: lerp(a[2], b[2], u), z: lerp(a[3], b[3], u) }; } } const k = KEYS[KEYS.length - 1]; return { cx: k[1], cy: k[2], z: k[3] }; }
+const setCam = (ctx, c) => ctx.setTransform(c.z * S, 0, 0, c.z * S, W / 2 - c.cx * c.z * S, H / 2 - c.cy * c.z * S);
+
+// --- desenho do giz ---
+function drawItem(ctx, it, t) {
+  const p = clamp((t - it.t0) / (it.t1 - it.t0)); if (p <= 0) return;
+  if (it.k === 's') {
+    const m = Math.max(2, Math.ceil(p * it.n)); ctx.strokeStyle = it.col; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    for (let i = 1; i < m; i++) { ctx.lineWidth = it.wd[i]; ctx.beginPath(); ctx.moveTo(it.pts[i - 1][0], it.pts[i - 1][1]); ctx.lineTo(it.pts[i][0], it.pts[i][1]); ctx.stroke(); }
+  } else {
+    ctx.save(); ctx.translate(it.x, it.y); ctx.rotate(it.rot); ctx.font = `600 ${it.size}px Caveat, cursive`; ctx.textAlign = 'left';
+    const w = ctx.measureText(it.str).width, x0 = it.align === 'center' ? -w / 2 : 0;
+    ctx.beginPath(); ctx.rect(x0 - 10, -it.size * 1.1, (w + 20) * p, it.size * 1.6); ctx.clip();
+    ctx.fillStyle = it.col; ctx.fillText(it.str, x0, 0); ctx.globalAlpha = 0.5; ctx.fillText(it.str, x0 + 0.9, 0.7); ctx.restore();
+  }
+}
+function grain(ctx, c) {
+  const pat = ctx.createPattern(TILE, 'repeat'), k = c.z * S * 0.5, tx = W / 2 - c.cx * c.z * S, ty = H / 2 - c.cy * c.z * S;
+  pat.setTransform(new DOMMatrix([k, 0, 0, k, tx, ty])); ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalCompositeOperation = 'destination-in'; ctx.fillStyle = pat; ctx.fillRect(0, 0, W, H); ctx.globalCompositeOperation = 'source-over';
+}
+function wipePath(ctx, p, extra) {
+  const m = Math.max(2, Math.ceil(p * WIPE.pts.length)); ctx.beginPath(); WIPE.pts.slice(0, m).forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = WIPE.w + (extra || 0);
+}
+// --- legendas ---
+const CUES = JSON.parse('[[1.6,5.7,"Viver uma vida simples é muito mais fácil"],[5.1,10.4,"se você souber esquecer os problemas que você não pode resolver"],[10.45,17.2,"e também viver somente aquilo que você é capaz de poder resolver"],[17.55,19.5,"aquilo que está ao seu redor,"],[19.6,22.05,"simples e direto,"],[22.15,25.3,"faça e você será mais feliz."]]');
+function lines(txt, max) { const w = txt.split(' '); if (txt.length <= max) return [txt]; let best = 1, bd = 1e9; for (let i = 1; i < w.length; i++) { const d = Math.abs(w.slice(0, i).join(' ').length - w.slice(i).join(' ').length); if (d < bd) { bd = d; best = i; } } return [w.slice(0, best).join(' '), w.slice(best).join(' ')]; }
+function drawSubs(t) {
+  for (const [a, b, txt] of CUES) {
+    if (t < a || t > b) continue;
+    const al = Math.min(ss((t - a) / 0.25), 1 - ss((t - (b - 0.25)) / 0.25)), L = lines(txt, 26), fs = Math.round(44 * S), lh = 56 * S, h = L.length * lh + 30 * S, y0 = H - 360 * S - h;
+    main.save(); main.globalAlpha = al * 0.82; main.fillStyle = '#16221c'; main.beginPath(); main.roundRect(70 * S, y0, W - 140 * S, h, 22 * S); main.fill(); main.globalAlpha = al;
+    main.font = `italic 500 ${fs}px "Cormorant Garamond", serif`; main.textAlign = 'center'; main.fillStyle = '#f2f0e6';
+    L.forEach((s, i) => main.fillText(s, W / 2, y0 + 15 * S + lh * (i + 0.72))); main.restore();
+  }
+}
+// --- quadro ---
+function render(t) {
+  const c = cam(t); main.setTransform(1, 0, 0, 1, 0, 0); main.globalAlpha = 1;
+  main.fillStyle = '#e9e1cf'; main.fillRect(0, 0, W, H);
+  setCam(main, c); main.drawImage(ROOM, 0, 0, 1080, 1920);
+  // camada dos problemas
+  lp.setTransform(1, 0, 0, 1, 0, 0); lp.clearRect(0, 0, W, H); setCam(lp, c); P.forEach(it => drawItem(lp, it, t));
+  const wp = clamp((t - WIPE.t0) / (WIPE.t1 - WIPE.t0));
+  if (wp > 0) { lp.globalCompositeOperation = 'destination-out'; lp.shadowColor = '#000'; lp.shadowBlur = 30 * c.z * S; wipePath(lp, ss(wp)); lp.strokeStyle = '#000'; lp.stroke(); lp.shadowBlur = 0; lp.globalCompositeOperation = 'source-over'; }
+  grain(lp, c);
+  // camada do giz
+  lc.setTransform(1, 0, 0, 1, 0, 0); lc.clearRect(0, 0, W, H); setCam(lc, c); C.forEach(it => drawItem(lc, it, t)); grain(lc, c);
+  main.setTransform(1, 0, 0, 1, 0, 0);
+  if (t < 9.6) main.drawImage(LP, 0, 0);
+  if (wp > 0) { setCam(main, c); main.save(); main.filter = `blur(${Math.round(16 * c.z * S)}px)`; wipePath(main, ss(wp), -50); main.strokeStyle = `rgba(225,240,232,${0.045 * (1 - ss((t - 9) / 1.5))})`; main.stroke(); main.restore(); main.setTransform(1, 0, 0, 1, 0, 0); }
+  main.globalAlpha = 0.93; main.drawImage(LC, 0, 0); main.globalAlpha = 1;
+  const v = main.createRadialGradient(W / 2, H / 2, H * 0.4, W / 2, H / 2, H * 0.85); v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,0.22)'); main.fillStyle = v; main.fillRect(0, 0, W, H);
+  drawSubs(t);
+}
+window.render = render;
+(async () => {
+  try { const fs = [new FontFace('Caveat', 'url(fonts/Caveat.woff2)', { weight: '600' }), new FontFace('Cormorant Garamond', 'url(fonts/CormorantItalic.woff2)', { weight: '500', style: 'italic' })]; for (const f of fs) { await f.load(); document.fonts.add(f); } } catch (e) { console.error('[font]', e); }
+  bake(); makeTile(); render(0); window.READY = true;
+})();
+</script></body></html>
