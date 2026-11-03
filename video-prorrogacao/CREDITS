@@ -1,0 +1,9 @@
+Créditos de terceiros — vídeo "Prorrogação negada pelo INSS"
+
+- Vídeo, voz e áudio: gravações do próprio autor (usadas como enviadas, com estabilização e limpeza de ruído).
+- Logos: Aleandro Ferreira Advocacia e INSS (fornecidos pelo autor, fundo removido). O uso do logo do INSS é de responsabilidade do autor.
+- Fontes (SIL Open Font License 1.1): Playfair Display, Montserrat e Caveat, via pacotes @fontsource (licenças em fonts/).
+- Transcrição e tempo por palavra das legendas: faster-whisper (MIT), modelo Whisper "medium" (MIT, OpenAI).
+- Gráficos: código próprio em canvas (index.html, lousa.js). Render com Playwright/Chromium, montagem com FFmpeg (GPL) e vidstab (estabilização).
+- Música de reportagem e efeitos: sintetizados em código (mix.py), sem amostras de terceiros.
+- O autor é responsável pelos materiais que usar no vídeo.
