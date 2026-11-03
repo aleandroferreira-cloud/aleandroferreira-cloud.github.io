@@ -29,7 +29,7 @@ def smooth(x, sec):
     k = max(1, int(sec * SR)); w = np.hanning(k * 2 + 1); w /= w.sum(); return np.convolve(x, w, mode='same')
 
 # ---------- voz ----------
-v, vsr = sf.read(os.path.join(HERE, 'voice', 'voz.wav'))
+v, vsr = sf.read(os.path.join(HERE, 'voice', 'voz_limpa.wav' if os.path.exists(os.path.join(HERE, 'voice', 'voz_limpa.wav')) else 'voz.wav'))
 if v.ndim > 1: v = v.mean(1)
 assert vsr == SR
 voice = np.zeros(N); voice[: min(N, len(v))] = v[:N]
