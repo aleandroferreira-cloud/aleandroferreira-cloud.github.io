@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Prorrogação negada — gráficos</title>
+<style>html,body{margin:0;background:#0b0805;overflow:hidden}canvas{display:block}</style></head>
+<body><canvas id="c"></canvas>
+<script>
+const W = innerWidth, H = innerHeight, S = W / 1920;
+const cv = document.getElementById('c'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
+const Q = new URLSearchParams(location.search);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, t) => a + (b - a) * t;
+const eo = t => 1 - Math.pow(1 - clamp(t), 3), ei = t => Math.pow(clamp(t), 3), eio = t => { t = clamp(t); return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };
+const back = t => { t = clamp(t); const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); };
+const P = (t, a, d) => clamp((t - a) / d);
+function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const R = mulberry(20261103), rnd = (a = 0, b = 1) => a + (b - a) * R();
+const RED = '#e0513c', WHITE = '#f6f1e6';
+const goldG = (x0, y0, x1, y1) => { const gr = g.createLinearGradient(x0, y0, x1, y1); [[0, '#fff3c0'], [0.28, '#f5d268'], [0.52, '#d9a53a'], [0.76, '#a8741c'], [1, '#e9c25a']].forEach(([o, c]) => gr.addColorStop(o, c)); return gr; };
+const IMG = {}; const load = src => new Promise(r => { const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = src; });
+let TL = null, CU = null;
+
+// ---------- texto ----------
+function font(size, w = 800, fam = 'Montserrat') { g.font = `${w} ${Math.round(size)}px ${fam}, sans-serif`; }
+function measure(s, size, w, fam) { font(size, w, fam); return g.measureText(s).width; }
+function wrap(s, maxW, size, w = 800, fam = 'Montserrat') { const words = s.split(' '), lines = []; let cur = ''; words.forEach(x => { const t = cur ? cur + ' ' + x : x; if (measure(t, size, w, fam) > maxW && cur) { lines.push(cur); cur = x; } else cur = t; }); if (cur) lines.push(cur); return lines; }
+function txt(s, x, y, o = {}) {
+  const { size = 60, w = 800, fam = 'Montserrat', align = 'left', gold = false, fill = WHITE, ls = 0, alpha = 1, shadow = true, scale = 1, clipP = 1 } = o;
+  if (alpha <= 0.002) return; g.save(); g.globalAlpha *= alpha; font(size, w, fam); g.letterSpacing = ls + 'px'; g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+  const tw = g.measureText(s).width - ls; let x0 = align === 'center' ? x - tw / 2 : align === 'right' ? x - tw : x;
+  if (scale !== 1) { g.translate(x0 + tw / 2, y - size * 0.35); g.scale(scale, scale); g.translate(-(x0 + tw / 2), -(y - size * 0.35)); }
+  if (clipP < 1) { g.beginPath(); g.rect(x0 - 20, y - size * 1.2, (tw + 40) * clipP, size * 1.7); g.clip(); }
+  if (shadow) { g.shadowColor = 'rgba(0,0,0,0.65)'; g.shadowBlur = size * 0.18; g.shadowOffsetY = size * 0.05; }
+  g.fillStyle = gold ? goldG(x0, y - size, x0 + tw, y) : fill; g.fillText(s, x0, y); g.restore();
+}
+function para(s, x, y, maxW, o = {}) { const size = o.size || 48, lh = o.lh || 1.22, L = wrap(s, maxW, size, o.w || 800, o.fam || 'Montserrat'); L.forEach((l, i) => txt(l, x, y + i * size * lh, { ...o, alpha: (o.alpha ?? 1) * (o.stagger ? eo(P(o.t ?? 1e9, (o.t0 || 0) + i * o.stagger, 0.4)) : 1) })); return L.length * size * lh; }
+
+// ---------- fundo ----------
+const PART = Array.from({ length: 90 }, () => ({ x: rnd(0, 1920), y: rnd(0, 1080), vx: rnd(-6, 6), vy: rnd(6, 22), r: rnd(0.8, 3.2), ph: rnd(0, 6.28), big: R() < 0.12 }));
+function drawBG(t, dim = 1) {
+  const gr = g.createRadialGradient(W * 0.52, H * 0.42, 40, W * 0.5, H * 0.5, W * 0.78); gr.addColorStop(0, '#5a4020'); gr.addColorStop(0.5, '#33230f'); gr.addColorStop(1, '#150e06'); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  g.save(); g.scale(S, S);
+  const sx = ((t * 38) % 3400) - 900; const sw = g.createLinearGradient(sx, 0, sx + 700, 0); sw.addColorStop(0, 'rgba(255,214,120,0)'); sw.addColorStop(0.5, 'rgba(255,214,120,0.045)'); sw.addColorStop(1, 'rgba(255,214,120,0)');
+  g.save(); g.transform(1, 0, -0.35, 1, 0, 0); g.fillStyle = sw; g.fillRect(sx, 0, 700, 1080); g.restore();
+  PART.forEach(p => { const x = ((p.x + p.vx * t) % 1920 + 1920) % 1920, y = ((p.y - p.vy * t) % 1080 + 1080) % 1080, a = (0.18 + 0.3 * Math.sin(t * 1.3 + p.ph) ** 2) * dim;
+    if (p.big) { const rg = g.createRadialGradient(x, y, 0, x, y, 46); rg.addColorStop(0, `rgba(255,205,110,${0.09 * dim})`); rg.addColorStop(1, 'rgba(255,205,110,0)'); g.fillStyle = rg; g.beginPath(); g.arc(x, y, 46, 0, 7); g.fill(); }
+    else { g.fillStyle = `rgba(245,205,120,${a})`; g.beginPath(); g.arc(x, y, p.r, 0, 7); g.fill(); } });
+  // moldura fina dourada nos cantos
+  g.strokeStyle = 'rgba(214,168,72,0.35)'; g.lineWidth = 2; const m = 34, k = 60; [[m, m, 1, 1], [1920 - m, m, -1, 1], [m, 1080 - m, 1, -1], [1920 - m, 1080 - m, -1, -1]].forEach(([x, y, a, b]) => { g.beginPath(); g.moveTo(x, y + b * k); g.lineTo(x, y); g.lineTo(x + a * k, y); g.stroke(); });
+  g.restore();
+  const v = g.createRadialGradient(W / 2, H / 2, H * 0.5, W / 2, H / 2, H * 1.0); v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(20,10,0,0.45)'); g.fillStyle = v; g.fillRect(0, 0, W, H);
+}
+
+// ---------- peças gráficas ----------
+function rr(x, y, w, h, r) { g.beginPath(); g.roundRect(x, y, w, h, r); }
+function card(x, y, w, h, t0, t, o = {}) {
+  const p = eo(P(t, t0, 0.55)); if (p <= 0) return 0; const bp = P(t, t0, 0.9);
+  g.save(); g.globalAlpha *= p; g.translate(0, (1 - p) * 40);
+  g.shadowColor = 'rgba(0,0,0,0.55)'; g.shadowBlur = 40; g.shadowOffsetY = 14; rr(x, y, w, h, 26); const fg = g.createLinearGradient(x, y, x, y + h); fg.addColorStop(0, o.hot ? 'rgba(120,86,34,0.80)' : 'rgba(78,54,26,0.80)'); fg.addColorStop(1, 'rgba(30,20,10,0.88)'); g.fillStyle = fg; g.fill(); g.shadowColor = 'transparent';
+  rr(x, y, w, h, 26); g.strokeStyle = o.red ? 'rgba(224,81,60,0.9)' : goldG(x, y, x + w, y + h); g.lineWidth = o.hot ? 3.5 : 2.5; const per = 2 * (w + h); g.setLineDash([per * bp, per]); g.stroke(); g.setLineDash([]);
+  if (o.hot) { g.shadowColor = 'rgba(245,200,100,0.55)'; g.shadowBlur = 36; rr(x, y, w, h, 26); g.strokeStyle = 'rgba(245,205,110,0.35)'; g.lineWidth = 2; g.stroke(); }
+  g.restore(); return p;
+}
+function line(x0, y, x1, t0, t) { const p = eo(P(t, t0, 0.8)); if (p <= 0) return; g.save(); g.strokeStyle = goldG(x0, y, x1, y); g.lineWidth = 3; g.beginPath(); g.moveTo(x0, y); g.lineTo(lerp(x0, x1, p), y); g.stroke(); g.restore(); }
+function icon(name, cx, cy, s, t0, t, col) {
+  const p = back(P(t, t0, 0.55)); if (p <= 0) return; g.save(); g.translate(cx, cy); g.scale(s / 100 * p, s / 100 * p); g.globalAlpha *= clamp(p * 1.4); g.lineWidth = 6; g.lineCap = 'round'; g.lineJoin = 'round'; g.strokeStyle = col || goldG(-50, -50, 50, 50); g.fillStyle = col || goldG(-50, -50, 50, 50);
+  g.shadowColor = 'rgba(245,200,100,0.4)'; g.shadowBlur = 14;
+  const L = (...a) => { g.beginPath(); g.moveTo(a[0], a[1]); for (let i = 2; i < a.length; i += 2) g.lineTo(a[i], a[i + 1]); g.stroke(); };
+  if (name === 'doc') { rr(-34, -46, 68, 92, 8); g.stroke(); L(-20, -24, 20, -24); L(-20, -8, 20, -8); L(-20, 8, 8, 8); g.beginPath(); g.arc(14, 28, 11, 0, 7); g.stroke(); L(14, 22, 14, 34); L(8, 28, 20, 28); }
+  if (name === 'chat') { rr(-48, -38, 96, 64, 16); g.stroke(); L(-20, 26, -26, 46, -2, 26); L(-26, -16, 26, -16); L(-26, 0, 8, 0); }
+  if (name === 'people') { g.beginPath(); g.arc(-20, -22, 14, 0, 7); g.stroke(); g.beginPath(); g.arc(22, -22, 14, 0, 7); g.stroke(); g.beginPath(); g.arc(-20, 40, 28, Math.PI, 0); g.stroke(); g.beginPath(); g.arc(22, 40, 28, Math.PI, 0); g.stroke(); }
+  if (name === 'scale') { L(0, -44, 0, 40); L(-24, 44, 24, 44); L(-46, -28, 46, -28); L(-46, -28, -62, 14); L(-46, -28, -30, 14); L(46, -28, 30, 14); L(46, -28, 62, 14); g.beginPath(); g.arc(-46, 14, 16, 0, Math.PI); g.stroke(); g.beginPath(); g.arc(46, 14, 16, 0, Math.PI); g.stroke(); }
+  if (name === 'check') { g.lineWidth = 11; L(-30, 2, -8, 26, 32, -26); }
+  if (name === 'cross') { g.lineWidth = 11; g.strokeStyle = RED; L(-26, -26, 26, 26); L(26, -26, -26, 26); }
+  if (name === 'coin') { g.beginPath(); g.arc(0, 0, 42, 0, 7); g.stroke(); g.beginPath(); g.arc(0, 0, 32, 0, 7); g.lineWidth = 2.5; g.stroke(); g.shadowBlur = 0; font(40, 800); g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('R$', 0, 3); }
+  if (name === 'pill') { g.rotate(-0.6); rr(-40, -17, 80, 34, 17); g.stroke(); L(0, -17, 0, 17); }
+  if (name === 'bell') { g.beginPath(); g.moveTo(-30, 24); g.quadraticCurveTo(-30, -34, 0, -34); g.quadraticCurveTo(30, -34, 30, 24); g.closePath(); g.stroke(); L(-36, 24, 36, 24); g.beginPath(); g.arc(0, 36, 8, 0, Math.PI); g.stroke(); L(0, -44, 0, -34); }
+  if (name === 'question') { font(130, 800, 'Playfair'); g.textAlign = 'center'; g.textBaseline = 'middle'; g.shadowBlur = 20; g.fillText('?', 0, 6); }
+  g.restore();
+}
+function badge(s, x, y, t0, t, o = {}) { const p = back(P(t, t0, 0.5)); if (p <= 0) return; const size = o.size || 30, w = measure(s, size, 800) + s.length * 3 + 70, h = size + 30; g.save(); g.translate(x + w / 2, y + h / 2); g.rotate(o.rot || 0); g.scale(p, p); g.globalAlpha *= clamp(p * 1.5); rr(-w / 2, -h / 2, w, h, h / 2); g.fillStyle = o.red ? 'rgba(224,81,60,0.95)' : goldG(-w / 2, 0, w / 2, 0); g.shadowColor = 'rgba(0,0,0,0.5)'; g.shadowBlur = 20; g.fill(); g.shadowColor = 'transparent'; font(size, 800); g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = o.red ? '#fff' : '#2a1b06'; g.letterSpacing = '3px'; g.fillText(s, 0, 2); g.restore(); return w; }
+function stamp(s, cx, cy, t0, t, size = 64) { const p = P(t, t0, 0.32); if (p <= 0) return; const sc = lerp(2.4, 1, ei(p)) , a = clamp(p * 3); g.save(); g.translate(cx, cy); g.rotate(-0.13); g.scale(sc, sc); g.globalAlpha *= a; font(size, 800); g.letterSpacing = '5px'; const w = g.measureText(s).width + 70, h = size + 50;
+  g.strokeStyle = RED; g.fillStyle = RED; g.lineWidth = 7; rr(-w / 2, -h / 2, w, h, 12); g.stroke(); g.lineWidth = 2.5; rr(-w / 2 + 11, -h / 2 + 11, w - 22, h - 22, 6); g.stroke(); g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(s, 0, 3); g.restore();
+  if (p >= 1) { const sh = eo(P(t, t0 + 0.3, 0.5)); if (sh < 1) { g.save(); g.strokeStyle = `rgba(224,81,60,${0.5 * (1 - sh)})`; g.lineWidth = 4; g.translate(cx, cy); g.rotate(-0.13); rr(-w / 2 - 40 * sh, -h / 2 - 40 * sh, w + 80 * sh, h + 80 * sh, 18); g.stroke(); g.restore(); } } }
+function counter(v, x, y, o = {}) { const s = (o.prefix || '') + Math.round(v).toLocaleString('pt-BR') + (o.suffix || ''); txt(s, x, y, { gold: true, w: 800, fam: 'Playfair', size: 150, ...o }); }
+function header(num, title, sub, t0, t) {
+  txt('CAPÍTULO ' + num, 130, 118, { size: 24, ls: 8, w: 700, gold: true, alpha: eo(P(t, t0 + 0.25, 0.5)) });
+  const p = eo(P(t, t0 + 0.35, 0.7)); txt(title, 130, 192, { size: 68, fam: 'Playfair', w: 800, fill: WHITE, alpha: p, clipP: p }); line(130, 218, 130 + Math.min(900, measure(title, 68, 800, 'Playfair') + 20), t0 + 0.7, t);
+  if (sub) txt(sub, 130, 262, { size: 26, w: 500, fill: 'rgba(246,241,230,0.7)', alpha: eo(P(t, t0 + 0.9, 0.6)) });
+}
+
+// ---------- logos ----------
+function logo(name, cx, cy, w, a = 1, shine = null) {
+  const im = IMG[name]; if (!im || a <= 0) return; const h = w * im.height / im.width; g.save(); g.globalAlpha *= a; g.shadowColor = 'rgba(0,0,0,0.55)'; g.shadowBlur = 24; g.drawImage(im, cx - w / 2, cy - h / 2, w, h); g.shadowColor = 'transparent';
+  if (shine !== null && shine > 0 && shine < 1) { const oc = logo.oc || (logo.oc = document.createElement('canvas')); oc.width = Math.ceil(w); oc.height = Math.ceil(h); const o = oc.getContext('2d'); o.clearRect(0, 0, oc.width, oc.height); o.drawImage(im, 0, 0, w, h); o.globalCompositeOperation = 'source-atop'; const sx = lerp(-w * 0.4, w * 1.4, shine), gr = o.createLinearGradient(sx - 90, 0, sx + 90, h * 0.35); gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(0.5, 'rgba(255,255,255,0.95)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); o.fillStyle = gr; o.fillRect(0, 0, oc.width, oc.height); g.drawImage(oc, cx - w / 2, cy - h / 2); }
+  g.restore(); return h;
+}
+function inssLogo(cx, cy, w, a = 1) { // logo colorido do INSS sobre um selo claro discreto para manter a leitura no fundo escuro
+  const im = IMG.inss; if (!im || a <= 0) return; const h = w * im.height / im.width, pad = w * 0.09; g.save(); g.globalAlpha *= a; rr(cx - w / 2 - pad, cy - h / 2 - pad * 0.8, w + pad * 2, h + pad * 1.6, 26); g.fillStyle = 'rgba(247,244,236,0.97)'; g.shadowColor = 'rgba(0,0,0,0.5)'; g.shadowBlur = 36; g.shadowOffsetY = 12; g.fill(); g.shadowColor = 'transparent'; g.drawImage(im, cx - w / 2, cy - h / 2, w, h); g.restore();
+}
+
+// ---------- moldura do vídeo (a imagem entra por cima, no ffmpeg) ----------
+const SLOT = { x: 130, y: 100, w: 494, h: 880 };
+function slotFrame(t0, t1, t) {
+  const pin = eo(P(t, t0, 0.5)), pout = 1 - eo(P(t, t1 - 0.4, 0.4)), a = Math.min(pin, pout); if (a <= 0) return; const { x, y, w, h } = SLOT; g.save(); g.globalAlpha *= a;
+  g.shadowColor = 'rgba(245,190,90,0.45)'; g.shadowBlur = 60; g.fillStyle = '#000'; g.fillRect(x - 3, y - 3, w + 6, h + 6); g.shadowColor = 'transparent';
+  g.strokeStyle = goldG(x - 16, y - 16, x + w + 16, y + h + 16); g.lineWidth = 5; g.strokeRect(x - 12, y - 12, w + 24, h + 24); g.lineWidth = 1.6; g.strokeRect(x - 24, y - 24, w + 48, h + 48);
+  const per = 2 * (w + h), pos = ((t * 0.18) % 1) * per; g.setLineDash([180, per]); g.lineDashOffset = -pos; g.strokeStyle = 'rgba(255,245,200,0.95)'; g.lineWidth = 5; g.strokeRect(x - 12, y - 12, w + 24, h + 24); g.setLineDash([]); g.restore();
+}
+
+// ---------- cenas ----------
+function head(list, t) { let cur = null; list.forEach(h => { if (t >= h.t) cur = h; }); return cur; }
+function sceneV(t, key) { // abertura e fecho: video à esquerda, manchetes à direita
+  const t0 = key === 'v1' ? CU.t_v1 : CU.t_v2, t1 = key === 'v1' ? CU.t_sting : CU.t_v2 + (CU.t_end - CU.t_v2);
+  slotFrame(t0 + 0.05, t1, t);
+  const X = 720, MW = 1100;
+  let list;
+  if (key === 'v1') list = [
+    { t: CU.v1_negou - 0.2, kind: 'stamp', a: 'PRORROGAÇÃO NEGADA', b: 'O INSS NEGOU O PEDIDO' },
+    { t: CU.v1_voltar - 0.2, kind: 'big', a: 'VOLTEI A TRABALHAR', b: 'MESMO DOENTE', icon: 'pill' },
+    { t: CU.v1_justica - 0.25, kind: 'q', a: 'RECEBO O TEMPO QUE TRABALHEI DOENTE?', icon: 'question' },
+    { t: CU.v1_sim - 0.1, kind: 'sim', a: 'SIM.', b: 'VOCÊ PODE TER DIREITO' },
+    { t: CU.v1_muita - 0.2, kind: 'big', a: 'VOLTOU A TRABALHAR', b: 'PERDEU O DIREITO?', icon: 'question' },
+    { t: CU.v1_assim - 0.35, kind: 'big', a: 'NÃO É BEM ASSIM', b: '', icon: 'check', hot: 1 },
+  ]; else list = [
+    { t: CU.v2_passou - 0.2, kind: 'q', a: 'VOCÊ PASSOU POR ISSO?', icon: 'question' },
+    { t: CU.v2_escreve - 0.3, kind: 'comment' },
+    { t: CU.v2_segue - 0.2, kind: 'sub' },
+    { t: CU.v2_abraco - 0.2, kind: 'big', a: 'ATÉ A PRÓXIMA!', b: 'ALEANDRO FERREIRA ADVOCACIA', hot: 1 },
+  ];
+  const h = head(list, t); if (!h) { // aguardando: apenas o selo da marca
+    return; }
+  const lt = t - h.t, ix = P(lt, 0, 0.6), nxt = list[list.indexOf(h) + 1], ex = nxt ? P(t, nxt.t - 0.1, 0.25) : 0, A = (1 - ex) * eo(ix);
+  g.save(); g.translate(-ex * 60, 0); g.globalAlpha *= clamp(1 - ex);
+  if (h.kind === 'stamp') { inssLogo(X + MW / 2, 330, 560, eo(P(lt, 0, 0.6))); stamp(h.a, X + MW / 2 + 20, 560, 0.5 + h.t, t, 62); txt(h.b, X + MW / 2, 700, { size: 34, w: 700, ls: 6, align: 'center', alpha: eo(P(lt, 0.9, 0.6)), fill: 'rgba(246,241,230,0.75)' }); }
+  if (h.kind === 'big') { if (h.icon) icon(h.icon, X + 90, 430, 150, h.t + 0.1, t); const L = wrap(h.a, MW - 220, 82, 800, 'Playfair'); L.forEach((l, i) => txt(l, X + 230, 400 + i * 96, { size: 82, fam: 'Playfair', gold: true, alpha: eo(P(lt, 0.15 + i * 0.12, 0.5)), clipP: eo(P(lt, 0.15 + i * 0.12, 0.6)) })); const hy = 400 + L.length * 96; if (h.b) txt(h.b, X + 230, hy + 20, { size: 54, w: 800, alpha: eo(P(lt, 0.7, 0.5)), fill: WHITE, ls: 2 }); line(X + 230, hy + 52, X + 230 + 520, h.t + 0.6, t); if (h.hot) { g.save(); g.globalAlpha *= 0.18 + 0.1 * Math.sin(t * 3); const rg = g.createRadialGradient(X + 600, 520, 10, X + 600, 520, 520); rg.addColorStop(0, 'rgba(250,205,100,1)'); rg.addColorStop(1, 'rgba(250,205,100,0)'); g.fillStyle = rg; g.fillRect(X - 100, 100, MW + 300, 800); g.restore(); } }
+  if (h.kind === 'q') { icon('question', X + 130, 470, 230, h.t + 0.05, t); const L = wrap(h.a, MW - 420, 76, 800, 'Playfair'); L.forEach((l, i) => txt(l, X + 330, 430 + i * 92 - (L.length - 1) * 38, { size: 76, fam: 'Playfair', gold: true, alpha: eo(P(lt, 0.2 + i * 0.15, 0.5)), clipP: eo(P(lt, 0.2 + i * 0.15, 0.6)) })); }
+  if (h.kind === 'sim') { const p = back(P(lt, 0, 0.55)); txt('SIM.', X + MW / 2, 560, { size: 330, fam: 'Playfair', gold: true, align: 'center', scale: lerp(0.5, 1, p), alpha: clamp(p * 2) }); txt(h.b, X + MW / 2, 690, { size: 52, w: 800, align: 'center', ls: 6, alpha: eo(P(lt, 0.7, 0.5)) }); line(X + MW / 2 - 330, 725, X + MW / 2 + 330, h.t + 0.9, t); g.save(); g.globalAlpha *= 0.28 * (1 - P(lt, 0, 1.2)); const rg = g.createRadialGradient(X + MW / 2, 520, 20, X + MW / 2, 520, 600); rg.addColorStop(0, 'rgba(255,225,140,1)'); rg.addColorStop(1, 'rgba(255,225,140,0)'); g.fillStyle = rg; g.fillRect(X - 200, 0, MW + 400, 1080); g.restore(); }
+  if (h.kind === 'comment') { const cx = X + 80, cy = 300, cw = 900, ch = 120; txt('ESCREVA NOS COMENTÁRIOS', cx, 250, { size: 34, w: 800, ls: 6, gold: true, alpha: eo(P(lt, 0, 0.5)) }); rr(cx, cy, cw, ch, 60); g.fillStyle = 'rgba(255,255,255,0.08)'; g.fill(); g.strokeStyle = goldG(cx, cy, cx + cw, cy); g.lineWidth = 3; g.globalAlpha *= 1; g.stroke(); const typed = 'voltei doente'.slice(0, Math.floor(P(lt, 0.7, 1.4) * 13)); g.beginPath(); g.arc(cx + 60, cy + 60, 28, 0, 7); g.fillStyle = goldG(cx, cy, cx + 100, cy + 100); g.fill(); txt(typed + (Math.floor(t * 2) % 2 ? '|' : ''), cx + 120, cy + 76, { size: 50, w: 700, fill: WHITE }); txt('QUE EU TE EXPLICO COMO PROVAR', cx, cy + 230, { size: 44, w: 800, fill: WHITE, alpha: eo(P(lt, 2.0, 0.6)) }); icon('chat', cx + 80, cy + 350, 120, h.t + 2.2, t); }
+  if (h.kind === 'sub') { const bx = X + 120, by = 400, bw = 760, bh = 150, p = back(P(lt, 0, 0.5)); g.save(); g.translate(bx + bw / 2, by + bh / 2); g.scale(p, p); rr(-bw / 2, -bh / 2, bw, bh, 28); g.fillStyle = '#e0302a'; g.shadowColor = 'rgba(0,0,0,0.5)'; g.shadowBlur = 30; g.fill(); g.shadowColor = 'transparent'; txt('INSCREVA-SE', 40, 22, { size: 64, align: 'center', fill: '#fff', ls: 4 }); g.restore(); icon('bell', bx + bw + 90, by + 70, 120, h.t + 0.5, t); txt('NOTÍCIAS QUENTINHAS SOBRE O SEU DIREITO', X + 80, 660, { size: 36, w: 800, ls: 3, alpha: eo(P(lt, 0.8, 0.6)), fill: WHITE }); line(X + 80, 695, X + 880, h.t + 1, t); }
+  g.restore();
+}
+function sceneSting(t) {
+  const t0 = CU.t_sting, lt = t - t0, p = eo(P(lt, 0.1, 0.9)), cx = W / 2 / S, cy = 430;
+  g.save(); g.scale(S, S);
+  g.save(); g.globalAlpha *= 0.35 * p; const rg = g.createRadialGradient(cx, cy, 10, cx, cy, 700); rg.addColorStop(0, 'rgba(255,205,110,1)'); rg.addColorStop(1, 'rgba(255,205,110,0)'); g.fillStyle = rg; g.fillRect(0, 0, 1920, 1080); g.restore();
+  for (let i = 0; i < 14; i++) { const a = (i / 14) * Math.PI * 2 + lt * 0.12; g.save(); g.translate(cx, cy); g.rotate(a); g.globalAlpha *= 0.05 * p; const lg = g.createLinearGradient(0, 0, 1200, 0); lg.addColorStop(0, 'rgba(255,215,130,1)'); lg.addColorStop(1, 'rgba(255,215,130,0)'); g.fillStyle = lg; g.beginPath(); g.moveTo(0, -14); g.lineTo(1300, -60); g.lineTo(1300, 60); g.lineTo(0, 14); g.fill(); g.restore(); }
+  const sc = lerp(0.88, 1, p); const k = eio(P(lt, 3.0, 1.0)); // no fim, a marca sobe para o canto
+  const wx = lerp(cx, 1920 - 70 - 95, k), wy = lerp(cy, 40 + 66, k), ww = lerp(860 * sc, 190, k);
+  logo('af', wx, wy, ww, p * (1), P(lt, 0.9, 1.1));
+  const tp = 1 - k; txt('PRORROGAÇÃO NEGADA PELO INSS', 960, 800, { size: 40, w: 800, ls: 10, align: 'center', gold: true, alpha: eo(P(lt, 1.2, 0.6)) * tp }); line(560, 836, 1360, t0 + 1.5, t); txt('E SE VOCÊ TRABALHOU DOENTE?', 960, 900, { size: 56, fam: 'Playfair', align: 'center', alpha: eo(P(lt, 1.7, 0.6)) * tp });
+  g.restore();
+}
+function sceneEnd(t) {
+  const lt = t - CU.t_end; g.save(); g.scale(S, S);
+  const p = eo(P(lt, 0.1, 0.9)); logo('af', 960, 260, 640, p, P(lt, 0.8, 1.2));
+  txt('OBRIGADO POR ASSISTIR', 960, 560, { size: 54, w: 800, ls: 10, align: 'center', gold: true, alpha: eo(P(lt, 0.9, 0.6)) }); line(640, 598, 1280, CU.t_end + 1.1, t);
+  [[150, 'PRÓXIMO VÍDEO'], [1130, 'PLAYLIST']].forEach(([x, lab], i) => { const q = eo(P(lt, 1.4 + i * 0.25, 0.6)); if (q <= 0) return; g.save(); g.globalAlpha *= q; g.strokeStyle = goldG(x, 660, x + 640, 1020); g.lineWidth = 3; g.strokeRect(x, 650, 640, 360 * 0.82); g.fillStyle = 'rgba(255,255,255,0.04)'; g.fillRect(x, 650, 640, 360 * 0.82); txt(lab, x + 320, 650 + 360 * 0.41 + 12, { size: 28, w: 800, ls: 8, align: 'center', fill: 'rgba(246,241,230,0.45)' }); g.restore(); });
+  const sp = back(P(lt, 2.0, 0.5)); if (sp > 0) { g.save(); g.translate(960, 790); g.scale(sp, sp); rr(-150, -42, 300, 84, 18); g.fillStyle = '#e0302a'; g.fill(); txt('INSCREVA-SE', 0, 14, { size: 30, align: 'center', fill: '#fff', ls: 3 }); g.restore(); }
+  g.restore();
+}
+
+// ---------- capítulos de áudio ----------
+const CH = [];
+function chapters() {
+  CH.length = 0;
+  const A0 = CU.t_audio, AE = CU.t_audio_end;
+  CH.push({ t0: A0, t1: CU.a_antigamente - 0.3, n: '01', title: 'Retorno forçado ao trabalho', sub: 'Prorrogação negada não significa que você está curada', draw: ch1 });
+  CH.push({ t0: CU.a_antigamente - 0.3, t1: CU.a_detalhe - 0.3, n: '02', title: 'STF · Tema 1125', sub: 'A Justiça mudou de entendimento', draw: ch2 });
+  CH.push({ t0: CU.a_detalhe - 0.3, t1: CU.a_prova - 0.3, n: '03', title: 'O que decide se você ganha ou perde', sub: 'Duas situações diferentes', draw: ch3 });
+  CH.push({ t0: CU.a_prova - 0.3, t1: CU.a_coisa - 0.3, n: '04', title: 'Três provas que o juiz mais aceita', sub: 'Guarde e organize esses documentos', draw: ch4 });
+  CH.push({ t0: CU.a_coisa - 0.3, t1: CU.a_entao - 0.3, n: '05', title: 'Não precisa de carteira assinada', sub: 'O direito é o mesmo', draw: ch5 });
+  CH.push({ t0: CU.a_entao - 0.3, t1: AE, n: '06', title: 'Guarde tudo', sub: 'Esse tempo pode virar dinheiro no seu bolso', draw: ch6 });
+}
+function ch1(t, c) {
+  header(c.n, c.title, c.sub, c.t0, t); const lt = t - c.t0;
+  const pa = eo(P(t, c.t0 + 0.5, 0.7)); inssLogo(420, 560, 520, pa * (1 - eo(P(t, CU.a_forcado - 0.2, 0.4))));
+  stamp('PRORROGAÇÃO NEGADA', 440, 760, CU.a_nega + 0.9, t, 44);
+  const ph1 = 1 - eo(P(t, CU.a_forcado - 0.2, 0.4));
+  g.save(); g.globalAlpha *= ph1;
+  txt('NO PAPEL, O INSS DIZ:', 880, 420, { size: 30, w: 800, ls: 6, gold: true, alpha: eo(P(t, CU.a_nega + 1.5, 0.5)) });
+  txt('“VOCÊ ESTÁ APTA', 880, 500, { size: 66, fam: 'Playfair', alpha: eo(P(t, CU.a_nega + 2.3, 0.5)), clipP: eo(P(t, CU.a_nega + 2.3, 0.7)) }); txt('PARA TRABALHAR”', 880, 580, { size: 66, fam: 'Playfair', alpha: eo(P(t, CU.a_nega + 2.9, 0.5)), clipP: eo(P(t, CU.a_nega + 2.9, 0.7)) });
+  const q = eo(P(t, CU.a_mas - 0.1, 0.5)); if (q > 0) { txt('MAS E SE VOCÊ NÃO ESTÁ?', 880, 720, { size: 74, fam: 'Playfair', gold: true, alpha: q, clipP: eo(P(t, CU.a_mas - 0.1, 0.9)) }); icon('pill', 1700, 560, 110, CU.a_firma, t); txt('VOLTA PRA FIRMA MORRENDO DE DOR', 880, 790, { size: 34, w: 800, ls: 3, fill: 'rgba(246,241,230,0.85)', alpha: eo(P(t, CU.a_firma, 0.6)) }); }
+  g.restore();
+  const pb = eo(P(t, CU.a_forcado - 0.1, 0.7)); if (pb > 0) { txt('RETORNO FORÇADO', 960, 470, { size: 128, fam: 'Playfair', gold: true, align: 'center', alpha: pb, clipP: eo(P(t, CU.a_forcado - 0.1, 0.9)) }); txt('AO TRABALHO', 960, 600, { size: 128, fam: 'Playfair', gold: true, align: 'center', alpha: eo(P(t, CU.a_forcado + 0.2, 0.7)), clipP: eo(P(t, CU.a_forcado + 0.2, 0.9)) });
+    const qq = eo(P(t, CU.a_comer - 0.2, 0.8)); if (qq > 0) { txt('NECESSIDADE DE COMER NÃO APAGA A DOENÇA', 960, 760, { size: 46, w: 800, align: 'center', ls: 2, alpha: qq, clipP: eo(P(t, CU.a_comer - 0.2, 1.4)) }); line(480, 790, 1440, CU.a_comer + 0.4, t); } }
+}
+function ch2(t, c) {
+  header(c.n, c.title, c.sub, c.t0, t);
+  const cw = 800, chh = 470, y = 330;
+  card(130, y, cw, chh, CU.a_antigamente, t); card(990, y, cw, chh, CU.a_hoje - 0.2, t, { hot: 1 });
+  txt('ANTIGAMENTE', 180, y + 70, { size: 28, w: 800, ls: 8, fill: 'rgba(246,241,230,0.6)', alpha: eo(P(t, CU.a_antigamente + 0.3, 0.4)) });
+  const L = ['“VOLTOU A TRABALHAR?', 'ENTÃO ESTÁ CAPAZ.', 'NÃO VOU PAGAR.”']; L.forEach((l, i) => txt(l, 180, y + 160 + i * 74, { size: 50, fam: 'Playfair', alpha: eo(P(t, CU.a_antigamente + 0.9 + i * 0.9, 0.5)), clipP: eo(P(t, CU.a_antigamente + 0.9 + i * 0.9, 0.9)) }));
+  const sp = eo(P(t, CU.a_hoje - 1.0, 0.5)); if (sp > 0) { g.save(); g.strokeStyle = RED; g.lineWidth = 7; g.lineCap = 'round'; g.beginPath(); g.moveTo(170, y + 135); g.lineTo(lerp(170, 900, sp), y + 135 + (lerp(170, 900, sp) - 170) * 0.28 + 0); g.stroke(); g.restore(); badge('SUPERADO', 180, y + 400, CU.a_hoje - 0.8, t, { red: 1, size: 26, rot: -0.04 }); }
+  icon('scale', 1070, y + 78, 92, CU.a_hoje, t); txt('HOJE · STF', 1140, y + 70, { size: 28, w: 800, ls: 8, gold: true, alpha: eo(P(t, CU.a_hoje + 0.1, 0.4)) });
+  txt('TEMA 1125', 1390, y + 235, { size: 116, fam: 'Playfair', gold: true, align: 'center', alpha: eo(P(t, CU.a_tema - 0.3, 0.6)), clipP: eo(P(t, CU.a_tema - 0.3, 1.0)) });
+  para('MESMO TRABALHANDO DOENTE, O INSS TEM QUE PAGAR AQUELE PERÍODO.', 1030, y + 325, 720, { size: 38, w: 800, t, t0: CU.a_tema + 0.5, stagger: 0.25, ls: 1 });
+  txt('VOCÊ TRABALHOU POR NECESSIDADE, NÃO PORQUE FICOU BOA.', 960, 855, { size: 33, w: 700, align: 'center', gold: true, ls: 2, alpha: eo(P(t, CU.a_detalhe - 3.6, 0.7)) });
+}
+function ch3(t, c) {
+  header(c.n, c.title, c.sub, c.t0, t);
+  const y = 330, cw = 800, chh = 500, x1 = 130, x2 = 990, A = CU.a_primeira - 0.3, B = CU.a_segunda - 0.3;
+  card(x1, y, cw, chh, A, t, { red: 1 }); card(x2, y, cw, chh, B, t, { hot: 1 });
+  txt('PRIMEIRA', x1 + 50, y + 70, { size: 26, w: 800, ls: 8, fill: 'rgba(246,241,230,0.6)', alpha: eo(P(t, A + 0.2, 0.4)) });
+  para('VOLTOU PORQUE QUIS', x1 + 50, y + 150, 700, { size: 52, fam: 'Playfair', w: 800, alpha: eo(P(t, A + 0.4, 0.5)) });
+  ['Se sentiu bem', 'Melhorou'].forEach((s, i) => { txt('•  ' + s, x1 + 50, y + 260 + i * 56, { size: 36, w: 600, alpha: eo(P(t, A + 1.2 + i * 0.8, 0.5)), fill: 'rgba(246,241,230,0.9)' }); });
+  icon('cross', x1 + 120, y + 420, 100, A + 3.6, t); txt('NÃO RECEBE', x1 + 200, y + 438, { size: 46, w: 800, fill: RED, ls: 3, alpha: eo(P(t, A + 3.7, 0.4)) });
+  txt('SEGUNDA', x2 + 50, y + 70, { size: 26, w: 800, ls: 8, gold: true, alpha: eo(P(t, B + 0.2, 0.4)) });
+  para('VOLTOU FORÇADO, MESMO DOENTE', x2 + 50, y + 150, 700, { size: 52, fam: 'Playfair', w: 800, gold: true, alpha: eo(P(t, B + 0.4, 0.5)) });
+  ['Com dor', 'Tomando remédio escondido', 'Pedindo pra ir ao banheiro toda hora (coluna)'].forEach((s, i) => { para('•  ' + s, x2 + 50, y + 268 + i * 52 + (i === 2 ? 0 : 0), 700, { size: 32, w: 600, alpha: eo(P(t, B + 1.4 + i * 1.5, 0.5)), fill: 'rgba(246,241,230,0.92)' }); });
+  icon('check', x2 + 120, y + 428, 100, CU.a_recebe - 0.1, t); txt('RECEBE SIM', x2 + 200, y + 446, { size: 50, w: 800, gold: true, ls: 3, alpha: eo(P(t, CU.a_recebe, 0.4)) });
+  const burst = P(t, CU.a_recebe, 1.0); if (burst > 0 && burst < 1) { g.save(); g.globalAlpha *= 0.4 * (1 - burst); g.strokeStyle = '#f5d268'; g.lineWidth = 4; g.beginPath(); g.arc(x2 + 120, y + 428, 60 + 220 * eo(burst), 0, 7); g.stroke(); g.restore(); }
+}
+function ch4(t, c) {
+  header(c.n, c.title, c.sub, c.t0, t);
+  const y = 300, cw = 520, chh = 520, xs = [130, 700, 1270], tt = [CU.a_um - 0.3, CU.a_dois - 0.3, CU.a_tres - 0.3];
+  const defs = [['doc', 'ATESTADOS E RECEITAS', 'do mesmo período em que você trabalhou', 'Atestado de março + trabalho em março = prova forte'], ['chat', 'AVISO AO PATRÃO', 'que você pediu pra sair ou avisou da dor', '“Patrão, tô com muita dor, mas preciso trabalhar.”'], ['people', 'TESTEMUNHA', 'colega que viu você com dor', 'chorando, tomando remédio, indo embora mais cedo']];
+  defs.forEach(([ic, tl, st, ex], i) => { const t0 = tt[i]; card(xs[i], y, cw, chh, t0, t, { hot: i === 1 && t > CU.a_ouro });
+    const nb = back(P(t, t0 + 0.1, 0.5)); if (nb > 0) { g.save(); g.translate(xs[i] + 56, y + 62); g.scale(nb, nb); g.beginPath(); g.arc(0, 0, 38, 0, 7); g.fillStyle = goldG(-38, -38, 38, 38); g.fill(); txt(String(i + 1), 0, 20, { size: 52, fam: 'Playfair', align: 'center', fill: '#2a1b06', shadow: false }); g.restore(); }
+    icon(ic, xs[i] + cw / 2, y + 160, 130, t0 + 0.3, t);
+    const tw = wrap(tl, cw - 80, 38, 800, 'Playfair').length, th = tw * 38 * 1.15, sw = wrap(st, cw - 80, 27, 600).length;
+    para(tl, xs[i] + 40, y + 285, cw - 80, { size: 38, fam: 'Playfair', w: 800, gold: true, alpha: eo(P(t, t0 + 0.5, 0.5)), lh: 1.15 });
+    para(st, xs[i] + 40, y + 285 + th + 18, cw - 80, { size: 27, w: 600, fill: 'rgba(246,241,230,0.85)', alpha: eo(P(t, t0 + 0.9, 0.5)) });
+    para(ex, xs[i] + 40, y + 285 + th + 18 + sw * 34 + 30, cw - 80, { size: 25, w: 500, fill: 'rgba(246,241,230,0.68)', alpha: eo(P(t, t0 + 1.6, 0.5)) }); });
+  badge('VALE OURO', xs[1] + cw - 250, y - 22, CU.a_ouro - 0.1, t, { size: 26, rot: 0.05 });
+}
+function ch5(t, c) {
+  header(c.n, c.title, c.sub, c.t0, t);
+  [['BICO', 0], ['DIÁRIA', 1], ['FAXINA', 2]].forEach(([s, i]) => { const t0 = CU.a_bico - 0.2 + i * 0.7, p = back(P(t, t0, 0.5)); if (p <= 0) return; const cx = 330 + i * 380, cy = 380; g.save(); g.translate(cx, cy); g.scale(p, p); g.globalAlpha *= clamp(p * 1.5); rr(-165, -50, 330, 100, 50); g.fillStyle = 'rgba(78,54,26,0.88)'; g.fill(); g.strokeStyle = goldG(-165, 0, 165, 0); g.lineWidth = 3; g.stroke(); txt(s, 0, 16, { size: 42, align: 'center', gold: true, ls: 6 }); g.restore(); });
+  txt('= O DIREITO É O MESMO', 960, 500, { size: 36, w: 800, align: 'center', ls: 6, fill: 'rgba(246,241,230,0.85)', alpha: eo(P(t, CU.a_bico + 1.8, 0.6)) });
+  const t0 = CU.a_oito - 0.5; card(190, 540, 700, 290, t0, t); card(1030, 540, 700, 290, CU.a_valor - 0.7, t, { hot: 1 });
+  txt('EXEMPLO DE CASO', 240, 600, { size: 22, w: 800, ls: 8, fill: 'rgba(246,241,230,0.6)', alpha: eo(P(t, t0 + 0.3, 0.4)) });
+  counter(eo(P(t, t0 + 0.3, 1.1)) * 8, 240, 740, { size: 150, alpha: eo(P(t, t0 + 0.3, 0.4)) }); txt('MESES DOENTE', 380, 740, { size: 38, w: 800, ls: 4, alpha: eo(P(t, t0 + 1.0, 0.5)) });
+  const ap = eo(P(t, CU.a_valor - 1.1, 0.5)); if (ap > 0) { g.save(); g.globalAlpha *= ap; g.strokeStyle = goldG(900, 0, 1020, 0); g.lineWidth = 8; g.lineCap = 'round'; g.beginPath(); g.moveTo(912, 690); g.lineTo(1000, 690); g.moveTo(980, 666); g.lineTo(1004, 690); g.lineTo(980, 714); g.stroke(); g.restore(); }
+  txt('RECEBEU DE UMA VEZ SÓ', 1080, 600, { size: 22, w: 800, ls: 8, gold: true, alpha: eo(P(t, CU.a_valor - 0.4, 0.4)) });
+  counter(eo(P(t, CU.a_valor - 0.3, 1.5)) * 15000, 1070, 740, { size: 110, prefix: 'R$ ', suffix: '+', alpha: eo(P(t, CU.a_valor - 0.5, 0.4)) });
+  txt('DE ATRASADOS, COM CORREÇÃO', 1080, 795, { size: 30, w: 700, fill: 'rgba(246,241,230,0.85)', alpha: eo(P(t, CU.a_valor + 0.9, 0.5)) });
+}
+function ch6(t, c) {
+  header(c.n, c.title, c.sub, c.t0, t);
+  const items = [['ATESTADO', CU.a_atestado], ['RECEITA', CU.a_receita], ['EXAME', CU.a_exame], ['PRINT DE CONVERSA', CU.a_print]];
+  items.forEach(([s, t0], i) => { const y = 340 + i * 118, p = eo(P(t, t0 - 0.2, 0.5)); card(130, y - 70, 900, 96, t0 - 0.35, t); icon('check', 190, y - 22, 64, t0 + 0.15, t); txt(s, 250, y - 4, { size: 44, w: 800, ls: 4, alpha: p, gold: true }); });
+  const p = eo(P(t, CU.a_dinheiro - 0.4, 0.8)); icon('coin', 1480, 520, 280, CU.a_dinheiro - 0.2, t);
+  txt('ESSE TEMPO PODE VIRAR', 1480, 740, { size: 40, w: 800, align: 'center', alpha: p, ls: 2 }); txt('DINHEIRO NO SEU BOLSO', 1480, 800, { size: 48, fam: 'Playfair', align: 'center', gold: true, alpha: p, clipP: p });
+}
+
+// ---------- legenda ----------
+function drawSubs(t, area) {
+  const c = TL.subs.find(s => t >= s.t0 && t <= s.t1); if (!c) return;
+  const al = Math.min(eo(P(t, c.t0, 0.18)), 1 - eo(P(t, c.t1 - 0.2, 0.2))); g.save(); g.scale(S, S);
+  const cx = area === 'v' ? 1285 : 960, maxW = area === 'v' ? 1040 : 1500, size = area === 'v' ? 60 : 66, lh = size * 1.28, base = area === 'v' ? 985 : 1022;
+  g.fillStyle = 'rgba(0,0,0,0)'; const words = c.words; font(size, 800); const sp = g.measureText(' ').width, items = words.map(w => ({ ...w, w2: g.measureText(w.w).width }));
+  let lines = [[]], cur = 0; items.forEach(it => { if (cur + it.w2 > maxW && lines[lines.length - 1].length) { lines.push([]); cur = 0; } lines[lines.length - 1].push(it); cur += it.w2 + sp; });
+  if (lines.length === 2) { let best = lines[0].length, bd = 1e9; for (let i = 1; i < items.length; i++) { const l1 = items.slice(0, i).reduce((s, x) => s + x.w2, 0) + sp * (i - 1), l2 = items.slice(i).reduce((s, x) => s + x.w2, 0) + sp * (items.length - i - 1); if (Math.max(l1, l2) <= maxW && Math.max(l1, l2) < bd) { bd = Math.max(l1, l2); best = i; } } lines = [items.slice(0, best), items.slice(best)]; }
+  const y0 = base - (lines.length - 1) * lh; g.globalAlpha = al; font(size, 800); g.textBaseline = 'alphabetic';
+  // faixa suave atrás do texto
+  const bw = Math.max(...lines.map(l => l.reduce((s, x) => s + x.w2, 0) + sp * (l.length - 1))) + 90, bh = lines.length * lh + 36; const gb = g.createLinearGradient(cx - bw / 2, 0, cx + bw / 2, 0); gb.addColorStop(0, 'rgba(28,18,8,0)'); gb.addColorStop(0.12, 'rgba(28,18,8,0.66)'); gb.addColorStop(0.88, 'rgba(28,18,8,0.66)'); gb.addColorStop(1, 'rgba(28,18,8,0)'); g.fillStyle = gb; g.fillRect(cx - bw / 2, y0 - size * 0.95, bw, bh);
+  g.fillStyle = goldG(cx - bw / 2, 0, cx + bw / 2, 0); g.fillRect(cx - bw * 0.3, y0 - size * 0.95 + bh - 2, bw * 0.6, 2);
+  lines.forEach((l, li) => { const lw = l.reduce((s, x) => s + x.w2, 0) + sp * (l.length - 1); let x = cx - lw / 2; const y = y0 + li * lh;
+    l.forEach(it => { const cur2 = t >= it.a && t < it.b, done = t >= it.b; g.save(); g.shadowColor = 'rgba(0,0,0,0.85)'; g.shadowBlur = 12; g.shadowOffsetY = 3;
+      if (cur2) { const k = clamp((t - it.a) / 0.14), s2 = 1 + 0.045 * Math.sin(Math.PI * k); g.translate(x + it.w2 / 2, y - size * 0.34); g.scale(s2, s2); g.translate(-(x + it.w2 / 2), -(y - size * 0.34)); g.shadowColor = 'rgba(255,200,90,0.9)'; g.shadowBlur = 26; g.fillStyle = goldG(x, y - size, x + it.w2, y); }
+      else g.fillStyle = done ? '#fff' : 'rgba(255,255,255,0.58)';
+      g.fillText(it.w, x, y); g.restore(); x += it.w2 + sp; }); });
+  g.restore();
+}
+
+// ---------- cenas, transições, quadro ----------
+let SC = [];
+function buildScenes() {
+  chapters(); SC = [
+    { t0: CU.t_v1, t1: CU.t_sting, draw: t => sceneV(t, 'v1'), sub: 'v', wm: 1 },
+    { t0: CU.t_sting, t1: CU.t_audio, draw: sceneSting, sub: null, wm: 0 },
+    ...CH.map(c => ({ t0: c.t0, t1: c.t1, draw: t => c.draw(t, c), sub: 'a', wm: 1 })),
+    { t0: CU.t_audio_end, t1: CU.t_v2, draw: () => { }, sub: null, wm: 0 },
+    { t0: CU.t_v2, t1: CU.t_end, draw: t => sceneV(t, 'v2'), sub: 'v', wm: 1 },
+    { t0: CU.t_end, t1: CU.dur + 1, draw: sceneEnd, sub: null, wm: 0 },
+  ];
+}
+function wmark(t, a) { if (a <= 0) return; g.save(); g.scale(S, S); logo('af', 1920 - 70 - 95, 40 + 66, 190, a * 0.95); g.restore(); }
+function bar(p) { // faixa dourada da transição
+  if (p <= 0 || p >= 1) return; const x = lerp(-420, 1920 + 420, eio(p)), w = 380; g.save(); g.scale(S, S); g.transform(1, 0, -0.32, 1, 0, 0); const gr = g.createLinearGradient(x - w, 0, x + w, 0); gr.addColorStop(0, 'rgba(214,160,60,0)'); gr.addColorStop(0.4, 'rgba(245,210,110,0.85)'); gr.addColorStop(0.5, 'rgba(255,248,215,1)'); gr.addColorStop(0.6, 'rgba(245,210,110,0.85)'); gr.addColorStop(1, 'rgba(214,160,60,0)'); g.fillStyle = gr; g.fillRect(x - w, -50, 2 * w, 1200); g.restore();
+}
+function render(t) {
+  if (Q.get('cover')) { drawCover(); return; }
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1;
+  drawBG(t, 1);
+  let i = SC.findIndex(s => t >= s.t0 && t < s.t1); if (i < 0) i = SC.length - 1;
+  const cur = SC[i], nxt = SC[i + 1], prv = SC[i - 1], TR = 0.4;
+  g.save(); g.scale(S, S); g.scale(1 / S, 1 / S); g.restore();
+  const drawS = (sc) => { g.save(); g.scale(S, S); const tmp = sc.draw; g.setTransform(S, 0, 0, S, 0, 0); tmp(t); g.restore(); };
+  // transição: a faixa varre da esquerda para a direita; à esquerda da faixa já aparece a cena nova
+  let pw = null, other = null, sw = false;
+  if (nxt && t > cur.t1 - TR && !(cur.t1 === CU.t_audio_end && false)) { pw = (t - (cur.t1 - TR)) / (2 * TR); other = nxt; }
+  else if (prv && t < cur.t0 + TR) { pw = (t - (cur.t0 - TR)) / (2 * TR); other = cur; }
+  if (pw !== null && !(cur === SC[0])) {
+    const old = other === nxt ? cur : prv, nw = other === nxt ? nxt : cur, barX = lerp(-420, 1920 + 420, eio(pw)) * S;
+    g.save(); g.setTransform(S, 0, 0, S, 0, 0); old.draw(t); g.restore();
+    g.save(); g.beginPath(); g.moveTo(0, 0); g.lineTo(barX + 140 * S, 0); g.lineTo(barX - 200 * S, H); g.lineTo(0, H); g.closePath(); g.clip(); drawBG(t, 1); g.setTransform(S, 0, 0, S, 0, 0); nw.draw(t); g.restore();
+    bar(pw);
+  } else { g.save(); g.setTransform(S, 0, 0, S, 0, 0); cur.draw(t); g.restore(); }
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  const wm = cur.wm ? 1 : 0; wmark(t, wm * (cur === SC[0] ? eo(P(t, 0.8, 0.6)) : 1));
+  if (cur.sub) drawSubs(t, cur.sub); else if (pw !== null) { const o = (other === nxt ? nxt : cur); if (o.sub) drawSubs(t, o.sub); }
+}
+window.render = render;
+
+// ---------- capa (miniatura) ----------
+function drawCover() {
+  g.setTransform(1, 0, 0, 1, 0, 0); drawBG(2.0, 1.2); g.save(); g.setTransform(S, 0, 0, S, 0, 0);
+  const ph = IMG.photo; if (ph) { const x = 1090, y = 70, w = 700, h = 940; g.save(); g.shadowColor = 'rgba(245,190,90,0.55)'; g.shadowBlur = 70; g.fillStyle = '#000'; g.fillRect(x - 4, y - 4, w + 8, h + 8); g.restore(); g.save(); g.beginPath(); g.rect(x, y, w, h); g.clip(); const sc = w / ph.width; g.drawImage(ph, 0, 0, ph.width, ph.height, x, y - 300, w, ph.height * sc); const gr = g.createLinearGradient(x, y + h * 0.65, x, y + h); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(10,7,3,0.55)'); g.fillStyle = gr; g.fillRect(x, y, w, h); g.restore(); g.strokeStyle = goldG(x, y, x + w, y + h); g.lineWidth = 7; g.strokeRect(x - 14, y - 14, w + 28, h + 28); g.lineWidth = 2; g.strokeRect(x - 30, y - 30, w + 60, h + 60); }
+  inssLogo(330, 150, 360, 1);
+  txt('TRABALHEI DOENTE', 90, 395, { size: 86, fam: 'Playfair', gold: true, shadow: true }); txt('DEPOIS QUE O INSS', 90, 505, { size: 82, fam: 'Playfair', fill: WHITE }); txt('NEGOU?', 90, 670, { size: 180, fam: 'Playfair', gold: true });
+  g.save(); g.strokeStyle = RED; g.lineWidth = 10; g.lineCap = 'round'; g.beginPath(); g.moveTo(96, 706); g.lineTo(640, 702); g.stroke(); g.restore();
+  badge('VOCÊ PODE TER DIREITO', 90, 742, 0, 9, { size: 36 });
+  logo('af', 330, 940, 330, 1);
+  g.restore();
+}
+
+(async () => {
+  try { const F = [['Playfair', 'fonts/Playfair800.woff2', '800'], ['Montserrat', 'fonts/Montserrat500.woff2', '500'], ['Montserrat', 'fonts/Montserrat700.woff2', '700'], ['Montserrat', 'fonts/Montserrat800.woff2', '800']]; for (const [n, u, w] of F) { const f = new FontFace(n, `url(${u})`, { weight: w }); await f.load(); document.fonts.add(f); } } catch (e) { console.error('[font]', e); }
+  TL = await (await fetch('timeline.json')).json(); CU = TL.cues; window.DUR = Q.get('end') ? parseFloat(Q.get('end')) : CU.dur; buildScenes();
+  IMG.af = await load('assets/logo-af.png'); IMG.inss = await load('assets/logo-inss.png'); IMG.photo = await load('assets/capa-foto.jpg');
+  window.EV = TL.ev || []; render(Q.get('cover') ? 0 : 1); window.READY = true;
+})();
+</script></body></html>
