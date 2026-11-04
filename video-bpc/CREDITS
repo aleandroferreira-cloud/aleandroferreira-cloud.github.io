@@ -1,0 +1,9 @@
+Créditos de terceiros — vídeo "BPC/LOAS tem 13º?"
+
+- Voz: gravação do próprio autor (limpeza de ruído, EQ e nivelamento).
+- Logo: Aleandro Ferreira Advocacia (fornecido pelo autor, fundo removido).
+- Fontes (SIL Open Font License 1.1): Caveat e Montserrat, via @fontsource.
+- Transcrição e tempo por palavra: faster-whisper (MIT), modelo Whisper "medium" (MIT, OpenAI).
+- Gráficos, mão, bonequinhos, trilha e efeitos: código próprio (index.html, lousa-core.js, bpc.js, mix.py).
+- Render com Playwright/Chromium e FFmpeg (GPL).
+- O autor é responsável pelos materiais que usar no vídeo.
