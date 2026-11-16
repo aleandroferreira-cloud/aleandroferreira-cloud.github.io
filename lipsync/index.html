@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lip Sync</title>
+<style>
+  :root { --fundo: #1b2230; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; background: var(--fundo); font-family: system-ui, sans-serif; }
+
+  /* Fundo: a própria imagem borrada, para não aparecer borda nenhuma ao redor do personagem */
+  #fundo {
+    position: fixed; inset: -60px;
+    background: url("imagens/serio.png") center / cover; /* <- imagem usada no fundo */
+    filter: blur(40px) brightness(.8);
+  }
+
+  /* Palco: mantém a proporção das imagens (1376x1824) e fica centralizado */
+  #palco {
+    position: fixed; left: 50%; top: 0;
+    height: 100vh; aspect-ratio: 1376 / 1824;
+    max-width: 100vw;
+    transform: translateX(-50%);
+  }
+  #cabeca { position: absolute; inset: 0; will-change: transform; }
+  #cabeca.balanca { animation: balanco .3s ease-in-out infinite alternate; }
+  @keyframes balanco { from { transform: translateY(0); } to { transform: translateY(-2px); } }
+
+  /* Todas as imagens ficam empilhadas; só muda a opacidade (crossfade de 80ms) */
+  #cabeca img {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; opacity: 0;
+    transition: opacity 80ms linear;
+    user-select: none; -webkit-user-drag: none;
+  }
+  #cabeca img.ativa { opacity: 1; }
+
+  /* Painel de controles */
+  #painel {
+    position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%);
+    width: min(94vw, 640px);
+    display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+    padding: 10px; border-radius: 14px;
+    background: rgba(10, 14, 22, .72); backdrop-filter: blur(8px);
+    transition: opacity .25s;
+  }
+  #painel.oculto { opacity: 0; pointer-events: none; }
+  button, label.btn {
+    font: 600 14px system-ui, sans-serif; color: #e9eef7;
+    background: #2b3547; border: 1px solid #3c4a63; border-radius: 9px;
+    padding: 8px 14px; cursor: pointer;
+  }
+  button:hover, label.btn:hover { background: #38455d; }
+  button:disabled { opacity: .4; cursor: default; }
+  button.on { background: #3b82f6; border-color: #3b82f6; }
+  .linha { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; width: 100%; }
+  #info { width: 100%; text-align: center; font-size: 12px; color: #9fb0c8; min-height: 16px; }
+  #medidor { width: 100%; height: 4px; border-radius: 2px; background: #2b3547; overflow: hidden; }
+  #medidor i { display: block; height: 100%; width: 0; background: #3b82f6; }
+  input[type=file] { display: none; }
+</style>
+</head>
+<body>
+
+<div id="fundo"></div>
+
+<div id="palco">
+  <div id="cabeca">
+    <!-- ============================================================
+         TROCAR AS IMAGENS: coloque as novas na pasta "imagens/" com
+         os MESMOS nomes (ou mude os caminhos aqui embaixo).
+         Todas precisam ter o mesmo tamanho e enquadramento.
+         ============================================================ -->
+    <img id="img-serio"    src="imagens/serio.png"    alt="" class="ativa">
+    <img id="img-falando"  src="imagens/falando.png"  alt="">
+    <img id="img-rindo"    src="imagens/rindo.png"    alt="">
+    <img id="img-chorando" src="imagens/chorando.png" alt="">
+    <img id="img-lado"     src="imagens/lado.png"     alt="">
+  </div>
+</div>
+
+<div id="painel">
+  <div id="medidor"><i id="barra"></i></div>
+  <div class="linha">
+    <label class="btn" for="arquivo">Enviar áudio</label>
+    <input type="file" id="arquivo" accept="audio/*">
+    <button id="play" disabled>▶ Play</button>
+  </div>
+  <div class="linha" id="expressoes">
+    <button data-e="auto" class="on">Automático</button>
+    <button data-e="serio">Sério</button>
+    <button data-e="falando">Falando</button>
+    <button data-e="rindo">Rindo</button>
+    <button data-e="chorando">Chorando</button>
+    <button data-e="lado">Lado</button>
+  </div>
+  <div id="info">Envie um MP3 ou WAV e aperte Play. Aperte H para esconder o painel.</div>
+</div>
+
+<audio id="audio" preload="auto"></audio>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const audio = $('audio'), cabeca = $('cabeca'), painel = $('painel');
+  const imgs = {
+    serio: $('img-serio'), falando: $('img-falando'), rindo: $('img-rindo'),
+    chorando: $('img-chorando'), lado: $('img-lado')
+  };
+
+  /* ---------- Ajustes (mexa aqui se a sincronia ficar fraca ou exagerada) ---------- */
+  const AJUSTES = {
+    limiarFalando: 0.14,   // acima disso a boca sai do "fechada" (0 a 1, relativo ao pico do áudio)
+    limiarRindo:   0.55,   // acima disso a boca abre bem (vogais abertas / voz forte)
+    histerese:     0.04,   // folga pra não ficar piscando perto do limite
+    pisoRuido:     0.006,  // volume absoluto mínimo; abaixo disso é silêncio
+    holdMs:        70      // tempo mínimo que uma boca fica na tela
+  };
+
+  /* ---------- Troca de imagem ---------- */
+  let atual = 'serio';
+  function mostrar(nome) {
+    if (nome === atual) return;
+    imgs[atual].classList.remove('ativa');
+    imgs[nome].classList.add('ativa');   // o crossfade de 80ms vem do CSS
+    atual = nome;
+  }
+
+  /* ---------- Controle manual ---------- */
+  let manual = 'auto';
+  document.querySelectorAll('#expressoes button').forEach(b => {
+    b.onclick = () => {
+      manual = b.dataset.e;
+      document.querySelectorAll('#expressoes button').forEach(x => x.classList.toggle('on', x === b));
+      if (manual !== 'auto') { mostrar(manual); }
+      else if (audio.paused) mostrar('serio');
+      atualizarBalanco();
+    };
+  });
+
+  /* ---------- Balanço da cabeça (2px) enquanto fala ---------- */
+  let falandoAgora = false;
+  function atualizarBalanco() {
+    const fala = !audio.paused && falandoAgora && manual !== 'lado';
+    cabeca.classList.toggle('balanca', fala);
+  }
+
+  /* ---------- Web Audio ---------- */
+  let ctx, analisador, buffer, criado = false;
+  function iniciarAudio() {
+    if (criado) return;
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const fonte = ctx.createMediaElementSource(audio);
+    // Filtro passa-faixa na região da voz (300–3400 Hz) só para a análise
+    const filtro = ctx.createBiquadFilter();
+    filtro.type = 'bandpass'; filtro.frequency.value = 1000; filtro.Q.value = 0.4;
+    analisador = ctx.createAnalyser();
+    analisador.fftSize = 1024;
+    buffer = new Float32Array(analisador.fftSize);
+    fonte.connect(ctx.destination);      // o som sai normal
+    fonte.connect(filtro).connect(analisador);
+    criado = true;
+  }
+
+  let pico = 0.05, nivel = 0, estado = 'serio', desde = 0;
+  function ciclo(t) {
+    requestAnimationFrame(ciclo);
+    if (!criado || audio.paused) { nivel = 0; $('barra').style.width = '0'; return; }
+
+    analisador.getFloatTimeDomainData(buffer);
+    let soma = 0;
+    for (let i = 0; i < buffer.length; i++) soma += buffer[i] * buffer[i];
+    const rms = Math.sqrt(soma / buffer.length);
+
+    // Normaliza pelo pico recente, assim funciona com áudio baixo ou alto
+    pico = Math.max(rms, pico * 0.9985, 0.03);
+    const bruto = rms < AJUSTES.pisoRuido ? 0 : Math.min(1, rms / pico);
+    // Ataque rápido, queda um pouco mais lenta (parece fala de verdade)
+    nivel += (bruto - nivel) * (bruto > nivel ? 0.6 : 0.25);
+    $('barra').style.width = (nivel * 100) + '%';
+
+    // Decide a boca com histerese
+    const h = AJUSTES.histerese;
+    let alvo = estado;
+    if (estado === 'serio')        { if (nivel > AJUSTES.limiarFalando + h) alvo = nivel > AJUSTES.limiarRindo + h ? 'rindo' : 'falando'; }
+    else if (estado === 'falando') { if (nivel < AJUSTES.limiarFalando - h) alvo = 'serio'; else if (nivel > AJUSTES.limiarRindo + h) alvo = 'rindo'; }
+    else if (estado === 'rindo')   { if (nivel < AJUSTES.limiarRindo - h) alvo = nivel < AJUSTES.limiarFalando - h ? 'serio' : 'falando'; }
+
+    if (alvo !== estado && t - desde >= AJUSTES.holdMs) { estado = alvo; desde = t; }
+
+    falandoAgora = estado !== 'serio';
+    if (manual === 'auto') mostrar(estado);
+    atualizarBalanco();
+  }
+  requestAnimationFrame(ciclo);
+
+  /* ---------- Arquivo e Play ---------- */
+  let url = null;
+  $('arquivo').onchange = e => {
+    const f = e.target.files[0]; if (!f) return;
+    if (url) URL.revokeObjectURL(url);
+    url = URL.createObjectURL(f);
+    audio.src = url;
+    $('play').disabled = false;
+    $('info').textContent = 'Áudio carregado: ' + f.name;
+    pico = 0.05; estado = 'serio';
+    if (manual === 'auto') mostrar('serio');
+  };
+  $('play').onclick = async () => {
+    iniciarAudio();
+    if (ctx.state === 'suspended') await ctx.resume();
+    if (audio.paused) audio.play(); else audio.pause();
+  };
+  audio.onplay  = () => $('play').textContent = '⏸ Pausar';
+  audio.onpause = () => { $('play').textContent = '▶ Play'; falandoAgora = false; estado = 'serio'; if (manual === 'auto') mostrar('serio'); atualizarBalanco(); };
+  audio.onended = () => { audio.currentTime = 0; };
+
+  document.addEventListener('keydown', e => { if (e.key.toLowerCase() === 'h') painel.classList.toggle('oculto'); });
+  window.__lipsync = { get atual() { return atual; } }; // ajuda em testes
+})();
+</script>
+</body>
+</html>
